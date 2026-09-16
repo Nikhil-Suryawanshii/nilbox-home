@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"nilbox-user","appId":"1:1009192390962:android:80e544c962f17aee88072b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"nilbox-user","configurations":{"android":"1:1009192390962:android:80e544c962f17aee88072b","ios":"1:1009192390962:ios:c5d7bcfc42259cbb88072b"}}}}}}

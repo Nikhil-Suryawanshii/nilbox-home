@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "1009192390962",
+    "project_id": "nilbox-user",
+    "storage_bucket": "nilbox-user.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1009192390962:android:80e544c962f17aee88072b",
+        "android_client_info": {
+          "package_name": "com.rootflash.nilboxuser"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1009192390962-1m2gebafu1ota7gdohp6lhdgc1s6uqas.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rootflash.nilboxuser",
+            "certificate_hash": "78e94b4588c0222c14b155bea29a15c3f0e1882b"
+          }
+        },
+        {
+          "client_id": "1009192390962-184p8jq4c4gbh3mk0203i9dv7cepkdug.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfXLuhhYMoGQsvM2yunQjZ_cIU6do8-xo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1009192390962-184p8jq4c4gbh3mk0203i9dv7cepkdug.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1009192390962-inisv5nr5eh25sijlap456k30ovqen8s.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.rootflash.nilboxuser"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
