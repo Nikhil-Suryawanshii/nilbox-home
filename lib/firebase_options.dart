@@ -50,11 +50,11 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyCfXLuhhYMoGQsvM2yunQjZ_cIU6do8-xo',
-    appId: '1:1009192390962:android:80e544c962f17aee88072b',
-    messagingSenderId: '1009192390962',
-    projectId: 'nilbox-user',
-    storageBucket: 'nilbox-user.firebasestorage.app',
+    apiKey: 'AIzaSyAnT1cUJeHwHPIPn6d6r6RKJdeemp2eU_s',
+    appId: '1:920798363316:android:f831b45704ca8a992ea1e1',
+    messagingSenderId: '920798363316',
+    projectId: 'nilbox-f87b8',
+    storageBucket: 'nilbox-f87b8.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(

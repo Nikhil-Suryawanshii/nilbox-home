@@ -5,7 +5,11 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:ready_ecommerce/firebase_options.dart';
 
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
   await setupFlutterNotifications();
   showFlutterNotification(message);
   debugPrint('Handling a background message ${message.messageId}');

@@ -357,6 +357,7 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
   final TextEditingController passwordController = TextEditingController();
   final List<FocusNode> fNodes = [FocusNode(), FocusNode()];
   final GlobalKey<FormBuilderState> formKey = GlobalKey<FormBuilderState>();
+  bool _isGoogleLoading = false;
 
   @override
   void initState() {
@@ -628,89 +629,13 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
 
                           Gap(12.h),
 
-                          /// 🔴 GOOGLE BUTTON (Requested)
+                          /// GOOGLE BUTTON
                           _socialButton(
                             text: "Continue with Google",
                             iconPath: Assets.png.google.path,
                             textColor: Colors.black,
-                            onTap: () async {
-                              // 1. Show Loading
-                              // showDialog(
-                              //   context: context,
-                              //   barrierDismissible: false,
-                              //   builder: (context) => const Center(
-                              //       child: CircularProgressIndicator()),
-                              // );
-
-                              try {
-                                // 2. PART A: Google Sign-In (Client Side)
-                                final userCredential = await ref
-                                    .read(googleAuthServiceProvider)
-                                    .signInWithGoogle();
-
-                                if (userCredential != null &&
-                                    userCredential.user != null) {
-                                  final user = userCredential.user!;
-
-
-                                  // 3. PART B: Backend API Call (Server Side)
-                                  final response = await ref
-                                      .read(authControllerProvider.notifier)
-                                      .socialLogin(
-                                        provider: "google",
-                                        firebaseUid: user.uid,
-                                        email: user.email ?? "",
-                                        name: user.displayName,
-                                        phone: user.phoneNumber,
-                                      );
-
-                                  // 4. Close Dialog
-                                  if (context.mounted) Navigator.pop(context);
-
-                                  // 5. Handle Final Success
-                                  if (response.isSuccess) {
-                                    // Fetch Address or other startup data if needed
-                                    ref
-                                        .read(
-                                            addressControllerProvider.notifier)
-                                        .getAddress();
-
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                            content: Text(response.message),
-                                            backgroundColor: Colors.green),
-                                      );
-                                      // REDIRECT TO HOME
-                                      context.nav.pushNamed(
-                                          Routes.getCoreRouteName(
-                                              AppConstants.appServiceName));
-                                    }
-                                  } else {
-                                    if (context.mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        SnackBar(
-                                            content: Text(response.message),
-                                            backgroundColor: Colors.red),
-                                      );
-                                    }
-                                  }
-                                } else {
-                                  // User cancelled Google Login
-                                  if (context.mounted) Navigator.pop(context);
-                                }
-                              } catch (e) {
-                                if (context.mounted) Navigator.pop(context);
-                                debugPrint("Login Error: $e");
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                      content: Text("An error occurred: $e"),
-                                      backgroundColor: Colors.red),
-                                );
-                              }
-                            },
+                            isLoading: _isGoogleLoading,
+                            onTap: _handleGoogleLogin,
                           ),
                           Gap(12.h),
 
@@ -882,12 +807,72 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
     );
   }
 
+  Future<void> _handleGoogleLogin() async {
+    if (_isGoogleLoading || ref.read(authControllerProvider)) return;
+
+    setState(() => _isGoogleLoading = true);
+    try {
+      final userCredential =
+          await ref.read(googleAuthServiceProvider).signInWithGoogle();
+
+      if (userCredential?.user == null) {
+        if (mounted) {
+          _showLoginError(
+            'Google sign-in failed. Add this app SHA-1 in Firebase and enable Google login.',
+          );
+        }
+        return;
+      }
+
+      final user = userCredential!.user!;
+      final response =
+          await ref.read(authControllerProvider.notifier).socialLogin(
+                provider: 'google',
+                firebaseUid: user.uid,
+                email: user.email ?? '',
+                name: user.displayName,
+                phone: user.phoneNumber,
+              );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        ref.read(addressControllerProvider.notifier).getAddress();
+        context.nav.pushNamed(
+          Routes.getCoreRouteName(AppConstants.appServiceName),
+        );
+      } else {
+        _showLoginError(response.message);
+      }
+    } catch (e) {
+      debugPrint('Google login error: $e');
+      if (mounted) {
+        _showLoginError(
+          'Google sign-in failed. Add this app SHA-1 in Firebase and try again.',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
+    }
+  }
+
+  void _showLoginError(String message) {
+    if (!mounted || message.isEmpty) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
   /// 🔹 Helper for Full-Width Social Buttons
   Widget _socialButton({
     required String text,
     required String iconPath,
     required VoidCallback onTap,
     Color textColor = Colors.black,
+    bool isLoading = false,
   }) {
     return SizedBox(
       width: double.infinity,
@@ -895,39 +880,44 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
       child: ElevatedButton(
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.white,
-          foregroundColor: Colors.grey[200], // Splash color
+          foregroundColor: Colors.grey[200],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),
           ),
           elevation: 2,
         ),
-        onPressed: onTap,
-        child: Row(
-          children: [
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 10.w),
-              child: Image.asset(
-                iconPath,
-                height: 26.h,
-                width: 26.w,
-              ),
-            ),
-            Expanded(
-              child: Center(
-                child: Text(
-                  text,
-                  style: TextStyle(
-                    color: textColor,
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
+        onPressed: isLoading ? null : onTap,
+        child: isLoading
+            ? SizedBox(
+                height: 22.h,
+                width: 22.h,
+                child: const CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Row(
+                children: [
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 10.w),
+                    child: Image.asset(
+                      iconPath,
+                      height: 26.h,
+                      width: 26.w,
+                    ),
                   ),
-                ),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        text,
+                        style: TextStyle(
+                          color: textColor,
+                          fontSize: 14.sp,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 34.w),
+                ],
               ),
-            ),
-            // Spacer to balance the icon width for perfect centering
-            SizedBox(width: 34.w),
-          ],
-        ),
       ),
     );
   }

@@ -11,7 +11,11 @@ class GoogleAuthHelper {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // 3. Initialize using the alias
-  final google_lib.GoogleSignIn _googleSignIn = google_lib.GoogleSignIn();
+  final google_lib.GoogleSignIn _googleSignIn = google_lib.GoogleSignIn(
+    scopes: const ['email', 'profile'],
+    serverClientId:
+        '920798363316-6c1lo6c6hsep3o2jqnbd51kt85f5pphe.apps.googleusercontent.com',
+  );
 
   Future<UserCredential?> signInWithGoogle() async {
     try {

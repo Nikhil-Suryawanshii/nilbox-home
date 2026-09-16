@@ -1,45 +1,53 @@
 {
   "project_info": {
-    "project_number": "1009192390962",
-    "project_id": "nilbox-user",
-    "storage_bucket": "nilbox-user.firebasestorage.app"
+    "project_number": "920798363316",
+    "project_id": "nilbox-f87b8",
+    "storage_bucket": "nilbox-f87b8.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1009192390962:android:80e544c962f17aee88072b",
+        "mobilesdk_app_id": "1:920798363316:android:f831b45704ca8a992ea1e1",
         "android_client_info": {
           "package_name": "com.rootflash.nilboxuser"
         }
       },
       "oauth_client": [
         {
-          "client_id": "1009192390962-1m2gebafu1ota7gdohp6lhdgc1s6uqas.apps.googleusercontent.com",
+          "client_id": "920798363316-o0ggm8tgamlrhts87pht5r5etp5h9coe.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.rootflash.nilboxuser",
-            "certificate_hash": "78e94b4588c0222c14b155bea29a15c3f0e1882b"
+            "certificate_hash": "4278c1fb7364d67b7db6fa8fae430e655d6c3c41"
           }
         },
         {
-          "client_id": "1009192390962-184p8jq4c4gbh3mk0203i9dv7cepkdug.apps.googleusercontent.com",
+          "client_id": "920798363316-sggjjb35r47g6op9pjms2lrfn26hki5v.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.rootflash.nilboxuser",
+            "certificate_hash": "e6cd9a76e62f5329555b4d13aceeedad87cfaf30"
+          }
+        },
+        {
+          "client_id": "920798363316-6c1lo6c6hsep3o2jqnbd51kt85f5pphe.apps.googleusercontent.com",
           "client_type": 3
         }
       ],
       "api_key": [
         {
-          "current_key": "AIzaSyCfXLuhhYMoGQsvM2yunQjZ_cIU6do8-xo"
+          "current_key": "AIzaSyAnT1cUJeHwHPIPn6d6r6RKJdeemp2eU_s"
         }
       ],
       "services": {
         "appinvite_service": {
           "other_platform_oauth_client": [
             {
-              "client_id": "1009192390962-184p8jq4c4gbh3mk0203i9dv7cepkdug.apps.googleusercontent.com",
+              "client_id": "920798363316-6c1lo6c6hsep3o2jqnbd51kt85f5pphe.apps.googleusercontent.com",
               "client_type": 3
             },
             {
-              "client_id": "1009192390962-inisv5nr5eh25sijlap456k30ovqen8s.apps.googleusercontent.com",
+              "client_id": "920798363316-hce0mg3gssq1pcv6afo1sq6qc8im1kf7.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
                 "bundle_id": "com.rootflash.nilboxuser"

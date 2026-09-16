@@ -173,30 +173,35 @@ void main() async {
 
   /// 🔥 FIREBASE (ONLY MOBILE)
   if (!kIsWeb) {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-
-    await setupFlutterNotifications();
-
-    FirebaseMessaging.onBackgroundMessage(
-      firebaseMessagingBackgroundHandler,
-    );
-
-    firebaseMessagingForgroundHandler();
-
     try {
-      final fcmToken = await FirebaseMessaging.instance.getToken();
-      debugPrint("FCM Token: $fcmToken");
-    } catch (e) {
-      debugPrint("Error getting FCM token: $e");
-    }
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      }
 
-    /// ⬇️ FLUTTER DOWNLOADER (ONLY MOBILE)
-    await FlutterDownloader.initialize(
-      debug: true,
-      ignoreSsl: false,
-    );
+      await setupFlutterNotifications();
+
+      FirebaseMessaging.onBackgroundMessage(
+        firebaseMessagingBackgroundHandler,
+      );
+
+      firebaseMessagingForgroundHandler();
+
+      try {
+        final fcmToken = await FirebaseMessaging.instance.getToken();
+        debugPrint("FCM Token: $fcmToken");
+      } catch (e) {
+        debugPrint("Error getting FCM token: $e");
+      }
+
+      await FlutterDownloader.initialize(
+        debug: true,
+        ignoreSsl: false,
+      );
+    } catch (e) {
+      debugPrint("Mobile startup init error: $e");
+    }
   }
 
   /// 📦 HIVE (WEB + MOBILE SAFE)
