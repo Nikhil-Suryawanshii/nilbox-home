@@ -5,18 +5,22 @@
 *.swp
 .DS_Store
 .atom/
-.build/
 .buildlog/
 .history
 .svn/
-.swiftpm/
-migrate_working_dir/
+*.zip
+*.rar
+*.tar.gz
 
 # IntelliJ related
 *.iml
 *.ipr
 *.iws
 .idea/
+
+
+# The .vscode folder contains barebones workspace settings, so it's best to ignore it.
+.vscode/
 
 # Flutter/Dart/Pub related
 **/doc/api/
@@ -26,8 +30,8 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
+mdFiles/
 /build/
-/coverage/
 
 # Symbolication related
 app.*.symbols
@@ -40,14 +44,17 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Android/iOS build leftovers
-*.apk
-*.aab
-*.dill
-.gradle/
-**/.cxx/
-
-# Signing secrets — keep these local
-android/key.properties
-**/*.keystore
-**/*.jks
+# iOS
+*.mode1v3
+*.mode2v3
+*.pbxuser
+!default.pbxuser
+*.perspectivev3
+!default.perspectivev3
+xcuserdata
+*.xccheckout
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+*.xcuserstate
