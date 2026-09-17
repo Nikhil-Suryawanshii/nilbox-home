@@ -358,6 +358,7 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
   final List<FocusNode> fNodes = [FocusNode(), FocusNode()];
   final GlobalKey<FormBuilderState> formKey = GlobalKey<FormBuilderState>();
   bool _isGoogleLoading = false;
+  bool _isFacebookLoading = false;
 
   @override
   void initState() {
@@ -547,84 +548,13 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
 
 
 
-                          /// 🔵 FACEBOOK BUTTON
+                          /// FACEBOOK BUTTON
                           _socialButton(
                             text: "Continue with Facebook",
                             iconPath: Assets.png.facebook.path,
                             textColor: Colors.black,
-                            // onTap: () async {
-                            //   // 1. Show loading
-                            //   showDialog(
-                            //     context: context,
-                            //     barrierDismissible: false,
-                            //     builder: (_) => const Center(child: CircularProgressIndicator()),
-                            //   );
-                            //
-                            //   try {
-                            //     // 2. Facebook Sign-In (Client)
-                            //     final userCredential = await ref
-                            //         .read(facebookAuthServiceProvider)
-                            //         .signInWithFacebook();
-                            //
-                            //     if (userCredential != null && userCredential.user != null) {
-                            //       final user = userCredential.user!;
-                            //
-                            //       // 3. Backend Social Login
-                            //       final response = await ref
-                            //           .read(authControllerProvider.notifier)
-                            //           .socialLogin(
-                            //         provider: "facebook",
-                            //         firebaseUid: user.uid,
-                            //         email: user.email ?? "",
-                            //         name: user.displayName ?? "Facebook User",
-                            //         phone: user.phoneNumber,
-                            //       );
-                            //
-                            //       if (context.mounted) Navigator.pop(context);
-                            //
-                            //       if (response.isSuccess) {
-                            //         ref.read(addressControllerProvider.notifier).getAddress();
-                            //
-                            //         ScaffoldMessenger.of(context).showSnackBar(
-                            //           SnackBar(
-                            //             content: Text(response.message),
-                            //             backgroundColor: Colors.green,
-                            //           ),
-                            //         );
-                            //
-                            //         context.nav.pushNamed(
-                            //           Routes.getCoreRouteName(AppConstants.appServiceName),
-                            //         );
-                            //       } else {
-                            //         ScaffoldMessenger.of(context).showSnackBar(
-                            //           SnackBar(
-                            //             content: Text(response.message),
-                            //             backgroundColor: Colors.red,
-                            //           ),
-                            //         );
-                            //       }
-                            //     } else {
-                            //       if (context.mounted) Navigator.pop(context);
-                            //     }
-                            //   } catch (e) {
-                            //     if (context.mounted) Navigator.pop(context);
-                            //     // debugPrint('mm-${e.toString()}');
-                            //     ScaffoldMessenger.of(context).showSnackBar(
-                            //       SnackBar(
-                            //         content: Text(e.toString()),
-                            //         backgroundColor: Colors.red,
-                            //       ),
-                            //     );
-                            //   }
-                            // },
-                            onTap: ()async {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Center(child: Text("Under Development")),
-                                  backgroundColor: Colors.red,
-                                ),
-                              );
-                            }
+                            isLoading: _isFacebookLoading,
+                            onTap: _handleFacebookLogin,
                           ),
 
                           Gap(12.h),
@@ -807,8 +737,60 @@ class _LoginLayoutState extends ConsumerState<LoginLayout> {
     );
   }
 
+  Future<void> _handleFacebookLogin() async {
+    if (_isFacebookLoading ||
+        _isGoogleLoading ||
+        ref.read(authControllerProvider)) {
+      return;
+    }
+
+    setState(() => _isFacebookLoading = true);
+    try {
+      final userCredential =
+          await ref.read(facebookAuthServiceProvider).signInWithFacebook();
+
+      if (userCredential?.user == null) {
+        return;
+      }
+
+      final user = userCredential!.user!;
+      final response =
+          await ref.read(authControllerProvider.notifier).socialLogin(
+                provider: 'facebook',
+                firebaseUid: user.uid,
+                email: user.email ?? '',
+                name: user.displayName ?? 'Facebook User',
+                phone: user.phoneNumber,
+              );
+
+      if (!mounted) return;
+
+      if (response.isSuccess) {
+        ref.read(addressControllerProvider.notifier).getAddress();
+        context.nav.pushNamed(
+          Routes.getCoreRouteName(AppConstants.appServiceName),
+        );
+      } else {
+        _showLoginError(response.message);
+      }
+    } on FacebookAuthException catch (e) {
+      if (mounted) _showLoginError(e.message);
+    } catch (e) {
+      debugPrint('Facebook login error: $e');
+      if (mounted) {
+        _showLoginError('Facebook sign-in failed. Please try again.');
+      }
+    } finally {
+      if (mounted) setState(() => _isFacebookLoading = false);
+    }
+  }
+
   Future<void> _handleGoogleLogin() async {
-    if (_isGoogleLoading || ref.read(authControllerProvider)) return;
+    if (_isGoogleLoading ||
+        _isFacebookLoading ||
+        ref.read(authControllerProvider)) {
+      return;
+    }
 
     setState(() => _isGoogleLoading = true);
     try {

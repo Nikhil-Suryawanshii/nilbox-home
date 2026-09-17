@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Nilbox</string>
+    <string name="facebook_app_id">1271958685005162</string>
+    <string name="facebook_client_token">562833edbf6acc470123c663b5cdd83d</string>
+    <string name="fb_login_protocol_scheme">fb1271958685005162</string>
+</resources>

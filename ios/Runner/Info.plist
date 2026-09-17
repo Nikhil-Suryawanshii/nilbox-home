@@ -43,7 +43,27 @@
 	<string>Main</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-	<string>whatsapp</string>
+		<string>whatsapp</string>
+		<string>fbapi</string>
+		<string>fb-messenger-share-api</string>
+		<string>fbauth2</string>
+	</array>
+	<key>FacebookAppID</key>
+	<string>1271958685005162</string>
+	<key>FacebookClientToken</key>
+	<string>562833edbf6acc470123c663b5cdd83d</string>
+	<key>FacebookDisplayName</key>
+	<string>Nilbox</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>fb1271958685005162</string>
+			</array>
+		</dict>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>

@@ -29,6 +29,7 @@ import 'package:ready_ecommerce/views/eCommerce/dashboard/layouts/dashboard_layo
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../providers/seller/common_provider.dart';
+import '../../../common/authentication/facebook/facebook_auth_service.dart';
 import '../../../common/authentication/google/google_auth_service.dart';
 
 class EcommerceMoreLayout extends ConsumerStatefulWidget {
@@ -75,6 +76,11 @@ class _EcommerceMoreLayoutState extends ConsumerState<EcommerceMoreLayout> {
     try {
       // Sign out from Google if using Google Auth
       await ref.read(googleAuthServiceProvider).signOut();
+      try {
+        await ref.read(facebookAuthServiceProvider).logout();
+      } catch (e) {
+        debugPrint('Facebook logout skipped: $e');
+      }
 
       // Perform logout from API
       final response = await ref.read(authControllerProvider.notifier).logout();
