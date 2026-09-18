@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -48,6 +49,7 @@ import '../components/banner_widget.dart';
 import 'package:badges/badges.dart' as badges;
 
 import '../components/category_pill.dart';
+import '../components/category_filter_tab.dart';
 
 
 class EcommerceHomeViewLayout extends ConsumerStatefulWidget {
@@ -67,6 +69,7 @@ class _EcommerceHomeViewLayoutState
 
 
   late ScrollController? _scrollController;
+  int _filterAnimationKey = 0;
 
   // @override
   // void initState() {
@@ -585,99 +588,21 @@ class _EcommerceHomeViewLayoutState
                               Column(
                                 children: [
 
-                                  Stack(
+                                  Column(
                                     children: [
-                                      SizedBox(
-                                        height: 50,
-                                        child: Padding(
-                                          padding: const EdgeInsets.only(top: 9),
-                                          child: Column(
-                                            children: [
-                                              _buildisonbuildCategoriesWidget(
-                                                  context, dashboardData.categories),
-                                              // SizedBox(height: ,),
-                                              Divider(
-                                                color: Colors.black.withOpacity(0.3),
-                                                height: 3,
-                                                thickness: 0.3,
-                                                indent: 20,
-                                                endIndent: 20,
-                                              ),
-                                            ],
-                                          ),
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 6.h),
+                                        child: _buildisonbuildCategoriesWidget(
+                                          context,
+                                          dashboardData.categories,
                                         ),
                                       ),
-                                      Positioned(
-                                        right: 17,
-                                        top: 0,
-                                        bottom: 8,
-                                        child: Consumer(
-                                          builder: (context, ref, _) {
-                                            final index =
-                                            ref.watch(selectedMainCategoryIndexProvider);
-
-                                            // final category = dashboardData.categories[index];
-
-                                            ///handle crashes and fix categoryMenu
-                                            // final categories = dashboardData.categories;
-                                            //
-                                            // if (categories.isEmpty || index >= categories.length) {
-                                            //   return const SizedBox();
-                                            // }
-                                            //
-                                            // final category = categories[index];
-
-                                            final categories = dashboardData.categories;
-
-                                            int safeIndex = ref.watch(selectedMainCategoryIndexProvider);
-
-                                            if (categories.isEmpty) {
-                                              return const SizedBox();
-                                            }
-
-                                            /// prevent crash
-                                            if (safeIndex >= categories.length) {
-                                              safeIndex = categories.length - 1;
-                                            }
-
-                                            final category = categories[safeIndex];
-                                            return GestureDetector(
-                                              onTap: () {
-                                                if (category.subCategories.isNotEmpty) {
-                                                  showModalBottomSheet(
-                                                    context: context,
-                                                    shape: RoundedRectangleBorder(
-                                                      borderRadius:
-                                                      BorderRadius.vertical(top: Radius.circular(16.r)),
-                                                    ),
-                                                    builder: (_) =>
-                                                        // SubCategoriesBottomSheet(category: category),
-                                                      _buildCategoriesWidget(context, dashboardData.categories),
-                                                  );
-                                                }
-                                              },
-                                              child: Padding(
-                                                padding: EdgeInsets.only(left: 10.w,bottom: 10),
-                                                child: CircleAvatar(
-                                                  radius: 20.r,
-                                                  backgroundColor:
-                                                  EcommerceAppColor.primary.withOpacity(.2),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.all(6.0),
-                                                    child: SvgPicture.asset(
-                                                      Assets.svg.categoryMenu,
-                                                      height: 25.h,
-                                                      colorFilter: const ColorFilter.mode(
-                                                        Colors.orange,
-                                                        BlendMode.srcIn,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            );
-                                          },
-                                        ),
+                                      Divider(
+                                        color: Colors.black.withOpacity(0.3),
+                                        height: 3,
+                                        thickness: 0.3,
+                                        indent: 20,
+                                        endIndent: 20,
                                       ),
                                     ],
                                   ),
@@ -694,8 +619,7 @@ class _EcommerceHomeViewLayoutState
                               Gap(10.h),
                               // _buildPopularProductWidget(
                               //     context, dashboardData.popularProducts),
-                              _buildGridProductsWidget(
-                                  context, ),
+                              _buildAnimatedFilterProducts(context),
 
                               // if (ref
                               //     .read(masterControllerProvider.notifier)
@@ -1462,50 +1386,56 @@ class _EcommerceHomeViewLayoutState
     final selectedIndex =
     ref.watch(selectedMainCategoryIndexProvider);
 
-    return Row(
-      children: [
-        SizedBox(
-          height: 30.h,
-          width: MediaQuery.of(context).size.width * .84,
-          child: ListView.separated(
-            padding: EdgeInsets.symmetric(horizontal: 24.w),
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            itemCount: finalCategories.length,
+    return SizedBox(
+      height: 50.h,
+      width: double.infinity,
+      child: ListView.separated(
+        clipBehavior: Clip.none,
+        padding: EdgeInsets.symmetric(horizontal: 16.w),
+        scrollDirection: Axis.horizontal,
+        physics: const BouncingScrollPhysics(),
+        itemCount: finalCategories.length + 1,
+        separatorBuilder: (_, __) => Gap(10.w),
+        itemBuilder: (context, index) {
+          if (index == finalCategories.length) {
+            return CategoryMenuTab(
+              index: index,
+              onTap: () {
+                showModalBottomSheet(
+                  context: context,
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        BorderRadius.vertical(top: Radius.circular(16.r)),
+                  ),
+                  builder: (_) =>
+                      _buildCategoriesWidget(context, categories),
+                );
+              },
+            );
+          }
 
-            /// CLEAN SPACING
-            separatorBuilder: (_, __) => Gap(45.w),
+          final category = finalCategories[index];
+          final isSelected = selectedIndex == index;
 
-            itemBuilder: (context, index) {
-              final category = finalCategories[index];
-              final isSelected = selectedIndex == index;
+          return CategoryFilterTab(
+            title: category.name,
+            isSelected: isSelected,
+            index: index,
+            onTap: () {
+              if (selectedIndex == index) return;
 
-              return GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () {
-                  if (selectedIndex == index) return;
+              setState(() => _filterAnimationKey++);
 
-                  /// UPDATE SELECTED TAB
-                  ref
-                      .read(
-                      selectedMainCategoryIndexProvider.notifier)
-                      .state = index;
+              ref.read(selectedMainCategoryIndexProvider.notifier).state =
+                  index;
 
-                  /// RESET SUB CATEGORY
-                  ref
-                      .read(
-                      selectedSubCategoryIndexProvider.notifier)
-                      .state = -1;
+              ref.read(selectedSubCategoryIndexProvider.notifier).state = -1;
 
-                  final isAll = category.id == -1;
+              final isAll = category.id == -1;
 
-                  /// REFRESH PRODUCTS
-                  ref
-                      .read(productControllerProvider.notifier)
-                      .refreshProducts(
+              ref.read(productControllerProvider.notifier).refreshProducts(
                     filter: ProductFilterModel(
-                      categoryId:
-                      isAll ? null : category.id,
+                      categoryId: isAll ? null : category.id,
                       subCategoryId: null,
                       page: 1,
                       perPage: 20,
@@ -1513,23 +1443,12 @@ class _EcommerceHomeViewLayoutState
                       sortType: null,
                     ),
                   );
-                },
-
-                child: _buildTabItem(
-                  context: context,
-                  title: category.name,
-                  isActive: isSelected,
-                ),
-              );
             },
-          ),
-        ),
-      ],
+          );
+        },
+      ),
     );
   }
-
-
-
 
   // Widget _buildTabItem({
   //
@@ -2098,23 +2017,50 @@ class _EcommerceHomeViewLayoutState
     );
   }
 
-  Widget _buildGridProductsWidget(BuildContext context) {
+  Widget _buildAnimatedFilterProducts(BuildContext context) {
+    final selectedIndex = ref.watch(selectedMainCategoryIndexProvider);
+
+    return _buildGridProductsWidget(
+      context,
+      animationKey: ValueKey('filter-$selectedIndex-$_filterAnimationKey'),
+    )
+        .animate(key: ValueKey('filter-$selectedIndex-$_filterAnimationKey'))
+        .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+        .slideY(
+          begin: 0.12,
+          end: 0,
+          duration: 400.ms,
+          curve: Curves.easeOutCubic,
+        )
+        .scale(
+          begin: const Offset(0.92, 0.92),
+          end: const Offset(1, 1),
+          duration: 400.ms,
+          curve: Curves.easeOutBack,
+        );
+  }
+
+  Widget _buildGridProductsWidget(
+    BuildContext context, {
+    Key? animationKey,
+  }) {
     // 1. FIX: Watch the provider STATE, not the notifier
     // This forces the widget to rebuild when data arrives
     final productState = ref.watch(productControllerProvider);
 
     return productState.when(
       loading: () => SizedBox(
-        // height: 200.h,
-        // child: popularProductShimmer(context),
+        key: animationKey,
         child: popularProductShimmer(context),
       ),
       error: (error, stackTrace) => Center(
+        key: animationKey,
         child: Text("Error loading products", style: AppTextStyle(context).bodyTextSmall),
       ),
       data: (products) {
         if (products.isEmpty) {
           return SizedBox(
+            key: animationKey,
             height: 100.h,
             child: Center(
                 child: Text("No products found", style: AppTextStyle(context).bodyText)),
@@ -2122,8 +2068,8 @@ class _EcommerceHomeViewLayoutState
         }
 
         return AnimationLimiter(
+          key: animationKey,
           child: SizedBox(
-            // height: MediaQuery.of(context).size.height * 1.55,
             child: MasonryGridView.count(
               padding: EdgeInsets.only(left: 15, right: 15, top: 0, bottom: 100),
               crossAxisCount: 2,
