@@ -1,5 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -46,6 +47,7 @@ import '../../../../models/eCommerce/shop/shop.dart';
 import '../../../seller/dashboard/seller_dashboard_wrapper.dart';
 import '../../more/more_view.dart';
 import '../components/banner_widget.dart';
+import '../components/home_collapsing_header.dart';
 import 'package:badges/badges.dart' as badges;
 
 import '../components/category_pill.dart';
@@ -346,185 +348,72 @@ class _EcommerceHomeViewLayoutState
     });
 
 
-    return  LoadingWrapperWidget(
-      isLoading: ref.watch(subCategoryControllerProvider),
-      child: Scaffold(
-
-        appBar: PreferredSize(
-          preferredSize: Size.fromHeight(0),
-          child: AppBar(
-            // surfaceTintColor: GlobalFunction.getContainerColor(),
-            elevation: 0,
-            backgroundColor: Color(0x59D36600),
-            // surfaceTintColor: Colors.transparent,
-            automaticallyImplyLeading: false,
-          ),
-        ),
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0x59D36600), // orange
-                Color(0x18FFFFFF), // white
-                Color(0xFFFFFF), // white
-              ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
+      child: LoadingWrapperWidget(
+        isLoading: ref.watch(subCategoryControllerProvider),
+        child: Scaffold(
+          backgroundColor: const Color(0xFFFFD4B8),
+          body: Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFFFF8F4),
+                  Color(0xFFFFFFFF),
+                  Color(0xFFFFFFFF),
+                ],
+                stops: [0.0, 0.14, 1.0],
+              ),
             ),
-          ),
-          child: NestedScrollView(
-            controller: _scrollController,
-            headerSliverBuilder: (context, value) {
-              return [
-                SliverList(
-                  delegate: SliverChildListDelegate(
-                    [
-                      _buildAppBarWidget(context),
-                    ],
-                  ),
-                ),
-                SliverPersistentHeader(
-                  pinned: true,
-                  floating: true,
-                  delegate: _SliverAppBarDelegate(
-                    // child: GestureDetector(
-                    //   onTap: () => context.nav.pushNamed(
-                    //     Routes.getProductsViewRouteName(
-                    //         AppConstants.appServiceName),
-                    //     arguments: [
-                    //       null,
-                    //       'All Product',
-                    //       null,
-                    //       null,
-                    //       null,
-                    //       subCategories,
-                    //     ],
-                    //   ),
-                    //   child: Container(
-                    //     decoration: _buildContainerDecoration(context),
-                    //     padding: EdgeInsets.symmetric(horizontal: 16.w),
-                    //     child: AbsorbPointer(
-                    //       absorbing: true,
-                    //       child: CustomSearchField(
-                    //         name: 'product_search',
-                    //         hintText: S.of(context).searchProduct,
-                    //         textInputType: TextInputType.text,
-                    //         controller: productSearchController,
-                    //         widget: Container(
-                    //           margin: EdgeInsets.all(10.sp),
-                    //           child: SvgPicture.asset(Assets.svg.searchHome),
-                    //         ),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
-                    child: Container(
-                      height: 40,
-                      decoration: _buildContainerDecoration(context),
-                      // decoration: const BoxDecoration(
-                      //   gradient: LinearGradient(
-                      //     begin: Alignment.topCenter,
-                      //     end: Alignment.bottomCenter,
-                      //     colors: [
-                      //       Color(0xFFD36600), // orange
-                      //       Color(0xFFFFFFFF), // white
-                      //     ],
-                      //   ),
-                      // ),
-                      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 10.h),
-                      child: Row(
-                        children: [
-                          /// SEARCH FIELD
-                          Expanded(
-                            child: GestureDetector(
-                              onTap: () => context.nav.pushNamed(
-                                Routes.getProductsViewRouteName(
-                                  AppConstants.appServiceName,
-                                ),
-                                arguments: [
-                                  null,
-                                  'All Product',
-                                  null,
-                                  null,
-                                  null,
-                                  subCategories,
-                                ],
-                              ),
-                              child: Container(
-                                height: 35.h,
-                                padding: EdgeInsets.symmetric(horizontal: 14.w),
-                                decoration: BoxDecoration(
-                                  color: colors(context).light!,
-                                  borderRadius: BorderRadius.circular(30.r),
-                                ),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-
-                                    Text(
-                                      S.of(context).searchProduct,
-                                      style: AppTextStyle(context)
-                                          .bodyText
-                                          .copyWith(color: Colors.grey,fontSize: 12),
-                                    ),
-                                    SvgPicture.asset(
-                                      Assets.svg.searchHome,
-                                      height: 16.h,
-                                      colorFilter: const ColorFilter.mode(
-                                        Colors.grey,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+            child: NestedScrollView(
+              controller: _scrollController,
+              headerSliverBuilder: (context, value) {
+                final topInset = MediaQuery.paddingOf(context).top;
+                return [
+                  SliverPersistentHeader(
+                    pinned: true,
+                    delegate: HomeCollapsingHeaderDelegate(
+                      topInset: topInset,
+                      onProfileTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => const EcommerceMoreView(),
                           ),
-                          Gap(10.w),
-                          _buildNotificationIcon(context),
-                          Gap(5.w),
-                          Material(
-                            type: MaterialType.transparency,
-                            child: CustomCartWidget(
-                              context: context,
-                              iconColor: colors(context).dark!,
-                              backgroundColor: Colors.white,
-                            ),
+                        );
+                      },
+                      onLiveTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute<void>(
+                            builder: (context) => SellerDashboardWrapper(),
                           ),
-                          // Gap(14.w),
-
-                          /// FILTER BUTTON
-                          // GestureDetector(
-                          //   onTap: () {
-                          //     // TODO: open filter bottom sheet
-                          //   },
-                          //   child: Container(
-                          //     height: 48.h,
-                          //     width: 48.h,
-                          //     // decoration: BoxDecoration(
-                          //     //   color: Colors.grey.shade100,
-                          //     //   shape: BoxShape.circle,
-                          //     // ),
-                          //     child: Center(
-                          //       child: SvgPicture.asset(
-                          //         Assets.svg.homeFilter, // slider/filter svg
-                          //         height: 45.h,
-                          //         // colorFilter: const ColorFilter.mode(
-                          //         //   Colors.black,
-                          //         //   BlendMode.srcIn,
-                          //         // ),
-                          //       ),
-                          //     ),
-                          //   ),
-                          // ),
+                        );
+                      },
+                      onSearchTap: () => context.nav.pushNamed(
+                        Routes.getProductsViewRouteName(
+                          AppConstants.appServiceName,
+                        ),
+                        arguments: [
+                          null,
+                          'All Product',
+                          null,
+                          null,
+                          null,
+                          subCategories,
                         ],
                       ),
+                      onNotificationTap: () {},
                     ),
-
                   ),
-                )
-              ];
-            },
+                ];
+              },
             body: ref.watch(dashboardControllerProvider).when(
                   data: (dashboardData) {
 
@@ -597,13 +486,6 @@ class _EcommerceHomeViewLayoutState
                                           dashboardData.categories,
                                         ),
                                       ),
-                                      Divider(
-                                        color: Colors.black.withOpacity(0.3),
-                                        height: 3,
-                                        thickness: 0.3,
-                                        indent: 20,
-                                        endIndent: 20,
-                                      ),
                                     ],
                                   ),
                                   Gap(6.h),
@@ -650,6 +532,7 @@ class _EcommerceHomeViewLayoutState
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -2188,69 +2071,32 @@ class _EcommerceHomeViewLayoutState
       valueListenable: Hive.box(AppConstants.userBox).listenable(),
       builder: (context, userBox, _) {
         return Container(
-          // color: GlobalFunction.getContainerColor(),
-          // color: Color(0x59D36600),
           decoration: const BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                Color(0xD36600), // orange
-                Color(0xD36600), // white
+                Color(0xD36600),
+                Color(0xD36600),
               ],
             ),
           ),
-          padding:
-              EdgeInsets.symmetric(horizontal: 16.w,).copyWith(bottom: 3.h),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.start,
+          padding: EdgeInsets.symmetric(horizontal: 16.w).copyWith(bottom: 3.h),
+          child: Row(
             children: [
-              // ref.read(hiveServiceProvider).userIsLoggedIn()
-              //     ? GestureDetector(
-              //         onTap: () => showModalBottomSheet(
-              //           shape: RoundedRectangleBorder(
-              //             borderRadius: BorderRadius.only(
-              //               topLeft: Radius.circular(16.r),
-              //               topRight: Radius.circular(16.r),
-              //             ),
-              //           ),
-              //           barrierColor:
-              //               colors(context).accentColor!.withOpacity(0.8),
-              //           context: context,
-              //           builder: (_) => const AddressModalBottomSheet(),
-              //         ),
-              //         child: _buildHeaderRow(context),
-              //       )
-              //     // : const AppLogo(isAnimation: true, centerAlign: false),
-              //     :
-              Row(
-                    children: [
-                      const AppLogo(isAnimation: true, centerAlign: false),
-                      Spacer(),
-                      // Image.asset(
-                      //   "assets/png/live.png", // make sure this exists
-                      //   height: 55.h,
-                      //   fit: BoxFit.contain,
-                      // ),
-                      liveImageWithText(text: 'Live',height: 55),
-                      // _buildSalePill(),
-                      Spacer(),
-                      // _buildCartIcon(context),
-                      // CustomCartWidget(context: context,
-                      //   iconColor: colors(context).dark!,
-                      //   backgroundColor: Colors.orange,
-                      // ),
-                      Gap(14.w),
-                      _buildProfileIcon(context),
-                    ],
-                  ),
+              const AppLogo(isAnimation: true, centerAlign: false),
+              const Spacer(),
+              liveImageWithText(text: 'Live', height: 55),
+              const Spacer(),
+              Gap(14.w),
+              _buildProfileIcon(context),
             ],
           ),
         );
       },
     );
   }
+
   Widget liveImageWithText({
     required String text,
     double height = 55,
@@ -2469,31 +2315,6 @@ class _EcommerceHomeViewLayoutState
     );
   }
 
-  Decoration _buildContainerDecoration(BuildContext context) {
-    return BoxDecoration(
-      // color: Theme.of(context).scaffoldBackgroundColor,
-      // color: Color(0x25D36600), // orange,
-      borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(16), bottomRight: Radius.circular(16)),
-      // boxShadow: [
-      //   BoxShadow(
-      //     color: colors(context).accentColor ?? EcommerceAppColor.offWhite,
-      //     blurRadius: 20,
-      //     spreadRadius: 5,
-      //     offset: const Offset(0, 2),
-      //   ),
-      // ],
-
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color(0xD36600), // orange
-          Color(0xD36600), // white
-        ],
-      ),
-    );
-  }
 
   Widget _buildHeaderRow(BuildContext context) {
     return Row(
@@ -2558,6 +2379,49 @@ class _EcommerceHomeViewLayoutState
       print("Error parsing address data: $e");
       return '';
     }
+  }
+
+  Decoration _buildContainerDecoration(BuildContext context) {
+    return BoxDecoration(
+      borderRadius: const BorderRadius.only(
+        bottomLeft: Radius.circular(16),
+        bottomRight: Radius.circular(16),
+      ),
+      gradient: const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          Color(0xD36600),
+          Color(0xD36600),
+        ],
+      ),
+    );
+  }
+}
+
+class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverAppBarDelegate({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return SizedBox.expand(child: child);
+  }
+
+  @override
+  double get maxExtent => 60.h;
+
+  @override
+  double get minExtent => 60.h;
+
+  @override
+  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
+    return false;
   }
 }
 
@@ -2704,27 +2568,3 @@ Widget _buildScrollingContainers() {
   );
 }
 
-class _SliverAppBarDelegate extends SliverPersistentHeaderDelegate {
-  _SliverAppBarDelegate({
-    required this.child,
-  });
-
-  final Widget child;
-
-  @override
-  Widget build(
-      BuildContext context, double shrinkOffset, bool overlapsContent) {
-    return SizedBox.expand(child: child);
-  }
-
-  @override
-  double get maxExtent => 60.h;
-
-  @override
-  double get minExtent => 60.h;
-
-  @override
-  bool shouldRebuild(covariant SliverPersistentHeaderDelegate oldDelegate) {
-    return false;
-  }
-}

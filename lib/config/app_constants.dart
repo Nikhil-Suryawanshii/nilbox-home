@@ -1,6 +1,6 @@
 class AppConstants {
 // Codecanyon
-  static const String baseUrl = 'https://nilbox.net/api';
+  static const String baseUrl = 'https://net.nilbox.net/api';
   // static const String baseUrl = 'https://devnilbox.com/api';
   // QA Testing
   //static const String baseUrl = 'https://uat.readyecommerce.app/api';
@@ -169,6 +169,9 @@ class AppConstants {
 
   static String appCurrency = "\$";
   static String appServiceName = 'ecommerce';
+
+  /// Temporary: set to false to restore API-driven home banners.
+  static const bool useStaticHomeBanner = true;
 
   static String pusherApiKey = 'a3cbadc04a202a7746fc'; 
   static String sellerPusherApiKey = '0f2222c2748df3ad45ba'; // NEW

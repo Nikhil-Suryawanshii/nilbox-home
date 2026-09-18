@@ -1,5 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
@@ -628,6 +630,13 @@ class PopularProductCard extends ConsumerStatefulWidget {
 }
 
 class _PopularProductCardState extends ConsumerState<PopularProductCard> {
+  static const _cardBg = Colors.white;
+  static const _titleColor = Color(0xFF212121);
+  static const _peachGlow = Color(0xFFFFF0E6);
+  static const _accentOrange = Color(0xFFFF5722);
+
+  bool _pressed = false;
+  bool _cartPressed = false;
 
   // 👇 2. THE FIX: Sync API data with Provider Data
   @override
@@ -661,281 +670,320 @@ class _PopularProductCardState extends ConsumerState<PopularProductCard> {
     });
   }
 
+  void _onFavoriteTap(BuildContext context) {
+    HapticFeedback.lightImpact();
+    if (ref.read(hiveServiceProvider).userIsLoggedIn()) {
+      ref.read(favoriteProvider(widget.product.id).notifier).toggle();
+      ref.read(productControllerProvider.notifier).favoriteProductAddRemove(
+            productId: widget.product.id,
+          );
+    } else {
+      showDialog(
+        context: context,
+        builder: (_) => ConfirmationDialog(
+          title: 'You are unable to favorite products without login!',
+          confirmButtonText: 'Login',
+          onPressed: () {
+            context.nav.pushNamedAndRemoveUntil(
+              Routes.login,
+              (route) => false,
+            );
+          },
+        ),
+      );
+    }
+  }
+
+  void _onAddToCartTap() {
+    HapticFeedback.lightImpact();
+    ref.refresh(selectedProductSizeIndex.notifier).state;
+    ref.refresh(selectedProductColorIndex.notifier).state;
+    showModalBottomSheet(
+      isScrollControlled: true,
+      isDismissible: false,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16.r),
+      ),
+      context: context,
+      builder: (_) => AddToCartBottomSheet(
+        product: widget.product,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     // Now this will reflect the correct state set in initState
     final isFavorite = ref.watch(favoriteProvider(widget.product.id));
 
+    final stagger = (widget.index * 60).ms;
+
     return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-        width: 190.w,
-        margin: EdgeInsets.only(right: 0.w),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// IMAGE
-            Stack(
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.vertical(
-                    top: Radius.circular(20.r),
-                  ),
-                  child: CachedNetworkImage(
-                    imageUrl: widget.product.thumbnail,
-                    // height: 250.h,
-                    height: widget.index.isEven ? 250.h : 170.h,
-                    width: double.infinity,
-                    fit: BoxFit.contain,
-                  ),
-                ),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap?.call();
+      },
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final cardWidth = constraints.maxWidth;
+            final isTall = widget.index.isEven;
+            final imageAreaHeight = cardWidth * (isTall ? 1.12 : 1.0);
+            final glowSize = cardWidth * 0.9;
+            final imageHeight = cardWidth * (isTall ? 0.98 : 0.86);
 
-                /// FAVORITE ICON
-                Positioned(
-                  top: 12.h,
-                  right: 12.w,
-                  child: CircleAvatar(
-                    radius: 14.r,
-                    backgroundColor: Colors.white,
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: AnimatedSize(
-                        duration: const Duration(milliseconds: 250),
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          visualDensity: VisualDensity.compact,
-                          onPressed: () {
-                            if (ref.read(hiveServiceProvider).userIsLoggedIn()) {
-                              // Optimistic Update (Instant UI change)
-                              ref
-                                  .read(favoriteProvider(widget.product.id).notifier)
-                                  .toggle();
-
-                              // Server Update
-                              ref
-                                  .read(productControllerProvider.notifier)
-                                  .favoriteProductAddRemove(
-                                productId: widget.product.id,
-                              );
-                            } else {
-                              showDialog(
-                                context: context,
-                                builder: (_) => ConfirmationDialog(
-                                  title:
-                                  'You are unable to favorite products without login!',
-                                  confirmButtonText: 'Login',
-                                  onPressed: () {
-                                    context.nav.pushNamedAndRemoveUntil(
-                                      Routes.login,
-                                          (route) => false,
-                                    );
-                                  },
-                                ),
-                              );
-                            }
-                          },
-                          icon: Icon(
-                            isFavorite
-                                ? Icons.favorite
-                                : Icons.favorite_outline_rounded,
-                            size: isFavorite ? 20.sp : 19.sp,
-                            color: isFavorite
-                                ? colors(context).errorColor
-                                : colors(context).primaryColor,
-                          ),
-                        ),
-                      ),
-                    ),
+            return Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(14.w, 14.h, 14.w, 18.h),
+              decoration: BoxDecoration(
+                color: _cardBg,
+                borderRadius: BorderRadius.circular(32.r),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(_pressed ? 0.03 : 0.05),
+                    blurRadius: _pressed ? 12 : 20,
+                    offset: Offset(0, _pressed ? 3 : 8),
                   ),
-                ),
-
-                // Positioned(
-                //   top: -0.h,
-                //   left: -10.w,
-                //   child: AnimatedSize(
-                //     duration: const Duration(milliseconds: 250),
-                //     child: Stack(
-                //       children: [
-                //         Image.asset(
-                //           'assets/png/discount_logo.png',
-                //           height: 45.h,
-                //           fit: BoxFit.contain,
-                //         ),
-                //         Text(widget.product.discountPercentage.toString()),
-                //       ],
-                //     ),
-                //   ),
-                // ),
-                if (widget.product.discountPrice > 0)Positioned(
-                    top: -0.h,
-                    left: -10.w,
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 250),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(
+                    height: imageAreaHeight,
                     child: Stack(
+                      clipBehavior: Clip.none,
                       alignment: Alignment.center,
                       children: [
-                        /// 🔴 DISCOUNT TAG PNG
-                        Transform.rotate(
-                          angle: 0.0, // tilt like image
-                          child: Image.asset(
-                            'assets/png/discount_logo.png',
-                            height: 50.h,
+                        Container(
+                          width: glowSize,
+                          height: glowSize,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: _peachGlow,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: imageAreaHeight * 0.06,
+                          child: Container(
+                            width: cardWidth * 0.48,
+                            height: 10.h,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(20.r),
+                              color: Colors.black.withOpacity(0.05),
+                            ),
+                          ),
+                        ),
+                        AnimatedScale(
+                          scale: _pressed ? 0.98 : 1,
+                          duration: const Duration(milliseconds: 120),
+                          curve: Curves.easeOutCubic,
+                          child: CachedNetworkImage(
+                            imageUrl: widget.product.thumbnail,
+                            width: cardWidth - 4.w,
+                            height: imageHeight,
                             fit: BoxFit.contain,
                           ),
                         ),
-
-                        /// 🏷️ DISCOUNT TEXT
-                        Transform.rotate(
-                          angle: 0.6, // SAME tilt as image
-                          child: Padding(
-                            padding: EdgeInsets.only(left: 5.w,top: 5),
-                            child: Text(
-                              '${widget.product.discountPercentage.toInt()}%',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9.sp,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.3,
+                        Positioned(
+                          top: 0,
+                          right: 0,
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _onFavoriteTap(context),
+                              customBorder: const CircleBorder(),
+                              child: Container(
+                                width: 34.w,
+                                height: 34.w,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: _accentOrange.withOpacity(0.35),
+                                    width: 1.2,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: _accentOrange.withOpacity(0.22),
+                                      blurRadius: 12,
+                                      spreadRadius: 1,
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  isFavorite
+                                      ? Icons.favorite
+                                      : Icons.favorite_border_rounded,
+                                  size: 17.sp,
+                                  color: _accentOrange,
+                                )
+                                    .animate(
+                                      key: ValueKey(
+                                        'fav-${widget.product.id}-$isFavorite',
+                                      ),
+                                    )
+                                    .scale(
+                                      begin: const Offset(0.6, 0.6),
+                                      end: const Offset(1, 1),
+                                      duration: 450.ms,
+                                      curve: Curves.elasticOut,
+                                    ),
                               ),
                             ),
                           ),
                         ),
+                        if (widget.product.discountPrice > 0)
+                          Positioned(
+                            top: 0,
+                            left: 0,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Image.asset(
+                                  'assets/png/discount_logo.png',
+                                  height: 44.h,
+                                  fit: BoxFit.contain,
+                                ),
+                                Transform.rotate(
+                                  angle: 0.6,
+                                  child: Padding(
+                                    padding:
+                                        EdgeInsets.only(left: 5.w, top: 4.h),
+                                    child: Text(
+                                      '${widget.product.discountPercentage.toInt()}%',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.sp,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                       ],
                     ),
                   ),
-                ),
-
-              ],
-            ),
-
-            /// CONTENT
-            Padding(
-              padding: const EdgeInsets.fromLTRB(15, 6, 15, 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  /// NAME
+                  Gap(8.h),
                   Text(
                     widget.product.name,
                     maxLines: 1,
                     textAlign: TextAlign.center,
                     overflow: TextOverflow.ellipsis,
-                    style: AppTextStyle(context)
-                        .bodyText
-                        .copyWith(fontWeight: FontWeight.w400, fontSize: 12),
+                    style: AppTextStyle(context).bodyText.copyWith(
+                          color: _titleColor,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 14.sp,
+                          letterSpacing: 0.2,
+                        ),
                   ),
-
-                  Gap(5.h),
-
-                  /// PRICE
+                  Gap(14.h),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      Gap(30.w),
-                      Text(
-                        GlobalFunction.price(
-                          ref: ref,
-                          price: (widget.product.discountPrice > 0
-                              ? widget.product.discountPrice
-                              : widget.product.price)
-                              .toString(),
+                      Expanded(
+                        child: Text(
+                          GlobalFunction.price(
+                            ref: ref,
+                            price: (widget.product.discountPrice > 0
+                                    ? widget.product.discountPrice
+                                    : widget.product.price)
+                                .toString(),
+                          ),
+                          style: AppTextStyle(context).bodyText.copyWith(
+                                color: _accentOrange,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 20.sp,
+                              ),
                         ),
-                        style: AppTextStyle(context)
-                            .bodyText
-                            .copyWith(fontWeight: FontWeight.bold, fontSize: 12),
                       ),
-                      // Gap(10.w),
-                      Gap(20.w),
-                      // if (widget.product.discountPrice > 0) ...[
-                      //   Text(
-                      //     GlobalFunction.price(
-                      //       ref: ref,
-                      //       price: widget.product.price.toString(),
-                      //     ),
-                      //     style: AppTextStyle(context).bodyText.copyWith(
-                      //       color: EcommerceAppColor.lightGray,
-                      //       fontSize: 10,
-                      //       decoration: TextDecoration.lineThrough,
-                      //       decorationColor: EcommerceAppColor.lightGray,
-                      //     ),
-                      //   ),
-                      // ]
-
                       GestureDetector(
-                        onTap: () {
-                          ref.refresh(selectedProductSizeIndex.notifier).state;
-                          ref.refresh(selectedProductColorIndex.notifier).state;
-                          showModalBottomSheet(
-                            isScrollControlled: true,
-                            isDismissible: false,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16.r),
+                        onTapDown: (_) => setState(() => _cartPressed = true),
+                        onTapUp: (_) => setState(() => _cartPressed = false),
+                        onTapCancel: () => setState(() => _cartPressed = false),
+                        onTap: _onAddToCartTap,
+                        child: AnimatedScale(
+                          scale: _cartPressed ? 0.88 : 1,
+                          duration: const Duration(milliseconds: 120),
+                          curve: Curves.easeOutBack,
+                          child: SizedBox(
+                            width: 52.w,
+                            height: 52.w,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              children: [
+                                Container(
+                                  width: 52.w,
+                                  height: 52.w,
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _peachGlow,
+                                  ),
+                                ),
+                                Container(
+                                  width: 42.w,
+                                  height: 42.w,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: _accentOrange,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: _accentOrange.withOpacity(0.4),
+                                        blurRadius: 14,
+                                        spreadRadius: 1,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Center(
+                                    child: SvgPicture.asset(
+                                      Assets.svg.shoppingBag,
+                                      height: 20.h,
+                                      width: 20.w,
+                                      colorFilter: const ColorFilter.mode(
+                                        Colors.white,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
-                            context: context,
-                            builder: (_) => AddToCartBottomSheet(
-                              product: widget.product,
-                            ),
-                          );
-                        },
-                        child: Container(
-                          // height: 25.h,
-                          // width: 25.h,
-                          height: 20.h,
-                          width: 18.h,
-                          decoration: const BoxDecoration(
-                            // color: Colors.orange,
-                            shape: BoxShape.circle,
                           ),
-                          child: SvgPicture.asset(
-                            Assets.svg.shoppingBag,
-                            // width: 17,
-                            // height: 10,
-                            // fit: fit,
-                            // alignment: alignment,
-                            // colorFilter: color != null
-                            // ? ColorFilter.mode(color!, BlendMode.srcIn)
-                            // : null,
-                          ),
-                          // IncrementButton(
-                          //   iconColor: Colors.white,
-                          //   onTap: () {
-                          //     ref.refresh(selectedProductSizeIndex.notifier).state;
-                          //     ref.refresh(selectedProductColorIndex.notifier).state;
-                          //     showModalBottomSheet(
-                          //       isScrollControlled: true,
-                          //       isDismissible: false,
-                          //       shape: RoundedRectangleBorder(
-                          //         borderRadius: BorderRadius.circular(16.r),
-                          //       ),
-                          //       context: context,
-                          //       builder: (_) => AddToCartBottomSheet(
-                          //         product: product,
-                          //       ),
-                          //     );
-                          //   },
-                          // ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ],
               ),
-            ),
-          ],
+            );
+          },
         ),
       ),
-    );
+    )
+        .animate()
+        .fadeIn(duration: 400.ms, delay: stagger)
+        .slideY(
+          begin: 0.1,
+          end: 0,
+          duration: 420.ms,
+          delay: stagger,
+          curve: Curves.easeOutCubic,
+        )
+        .scale(
+          begin: const Offset(0.94, 0.94),
+          end: const Offset(1, 1),
+          duration: 420.ms,
+          delay: stagger,
+          curve: Curves.easeOutBack,
+        );
   }
 }
