@@ -778,6 +778,7 @@ class _EcommerceDashboardLayoutState
       },
       child: Scaffold(
         extendBody: true,
+        backgroundColor: Colors.transparent,
         resizeToAvoidBottomInset: false,
         // floatingActionButtonLocation:
         // FloatingActionButtonLocation.centerDocked,
@@ -792,13 +793,18 @@ class _EcommerceDashboardLayoutState
             return Container(
               color: Colors.transparent,
               height: 100.h,
+              width: double.infinity,
               child: Stack(
                 clipBehavior: Clip.none,
+                alignment: Alignment.bottomCenter,
                 children: [
                   Padding(
-                    padding: const EdgeInsets.only(top: 25),
+                    padding: EdgeInsets.only(top: 25.h),
                     child: AppBottomNavbar(
-                      bottomItem: getBottomItems(context: context, isScrolled: isScrolled),
+                      bottomItem: getBottomItems(
+                        context: context,
+                        isScrolled: isScrolled,
+                      ),
                       onSelect: (index) {
                         if (index != null) onItemTapped(index);
                       },

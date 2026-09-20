@@ -147,6 +147,8 @@
 // }
 
 
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -174,61 +176,98 @@ class AppBottomNavbar extends ConsumerWidget {
 
 
 
+  static double horizontalMargin(BuildContext context) => 16.w;
+
+  static double sellCenterGap(BuildContext context) => 54.w;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return Container(
-      height: 75.h,
-      padding: EdgeInsets.symmetric(horizontal: 10.w), // Fixed padding
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Theme.of(context).scaffoldBackgroundColor,
-        borderRadius: BorderRadius.circular(40.r),
-        border: Border.all(
-          color: Colors.black12.withOpacity(0.1),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(
-          bottomItem.length,
-              (index) {
-            // 🛑 1. THE FIX: Expanded acts as a "Fixed Cage"
-            // Each item gets exactly 1/4th of the screen width.
-            // They can NEVER change width, so they can never push neighbors.
-            return Container(
-              // color: Colors.red,
-              margin: index == 2 ? EdgeInsets.only(left: 36.w) : EdgeInsets.zero,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque, // Ensures clicks work everywhere in the box
-                onTap: () => onSelect(index),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 5),
-                  child: Center(
-                    // 🛑 2. The Content grows INSIDE the center of the cage
-                    child: Container(
-                      margin: index == 2 ? EdgeInsets.only(left: 20.w) : EdgeInsets.zero,
+    final sideMargin = horizontalMargin(context);
+    final sellGap = sellCenterGap(context);
 
-                      // color: Colors.green,
-                      child: _buildBottomItem(
-                        bottomItem: bottomItem[index],
-                        index: index,
-                        context: context,
-                        ref: ref,
-                      ),
-                    ),
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: sideMargin),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(40.r),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
+          child: Container(
+            height: 75.h,
+            padding: EdgeInsets.symmetric(horizontal: 6.w),
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.22),
+              borderRadius: BorderRadius.circular(40.r),
+              border: Border.all(
+                color: const Color(0xFFF97316),
+                width: 1,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildNavTap(
+                    bottomItem: bottomItem[0],
+                    index: 0,
+                    context: context,
+                    ref: ref,
                   ),
                 ),
-              ),
-            );
-          },
+                Expanded(
+                  child: _buildNavTap(
+                    bottomItem: bottomItem[1],
+                    index: 1,
+                    context: context,
+                    ref: ref,
+                  ),
+                ),
+                SizedBox(width: sellGap),
+                Expanded(
+                  child: _buildNavTap(
+                    bottomItem: bottomItem[2],
+                    index: 2,
+                    context: context,
+                    ref: ref,
+                  ),
+                ),
+                Expanded(
+                  child: _buildNavTap(
+                    bottomItem: bottomItem[3],
+                    index: 3,
+                    context: context,
+                    ref: ref,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavTap({
+    required BottomItem bottomItem,
+    required int index,
+    required BuildContext context,
+    required WidgetRef ref,
+  }) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onSelect(index),
+      child: Center(
+        child: _buildBottomItem(
+          bottomItem: bottomItem,
+          index: index,
+          context: context,
+          ref: ref,
         ),
       ),
     );
@@ -254,8 +293,8 @@ class AppBottomNavbar extends ConsumerWidget {
       // color: Colors.red,
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
-      width:  61.w, // Slightly tweaked widths to ensure safety
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Stack(
