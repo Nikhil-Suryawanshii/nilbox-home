@@ -44,6 +44,8 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
   static const _newBadgeText = Color(0xFF1565C0);
   static const _saveBadgeBg = Color(0xFFFFEBEE);
   static const _starGold = Color(0xFFFFB800);
+  static const _muted = Color(0xFF9E9E9E);
+
   bool _cartPressed = false;
 
   Color get _imageBackground => ProductCardBackground.forProduct(
@@ -80,8 +82,8 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
 
   String get _brandLabel {
     final brand = widget.product.brand?.trim();
-    if (brand != null && brand.isNotEmpty) return brand.toLowerCase();
-    return widget.product.shop.name.toLowerCase();
+    if (brand != null && brand.isNotEmpty) return brand;
+    return widget.product.shop.name;
   }
 
   bool get _isNewProduct {
@@ -124,9 +126,27 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
   }
 
   Widget _buildDiscountBadge() {
-    if (!_hasDiscount) return const SizedBox.shrink();
+    if (!_hasDiscount) {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.92),
+          borderRadius: BorderRadius.circular(8.r),
+          border: Border.all(color: _priceRed.withOpacity(0.25)),
+        ),
+        child: Text(
+          'New',
+          style: TextStyle(
+            color: _priceRed,
+            fontSize: 10.sp,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    }
+
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 5.h),
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
       decoration: BoxDecoration(
         color: _priceRed,
         borderRadius: BorderRadius.circular(8.r),
@@ -143,26 +163,30 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
   }
 
   Widget _buildFavoriteButton(bool isFavorite) {
-    return GestureDetector(
-      onTap: _onFavoriteTap,
-      child: Container(
-        width: 34.w,
-        height: 34.w,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Icon(
-          isFavorite ? Icons.favorite : Icons.favorite_border_rounded,
-          size: 17.sp,
-          color: _priceRed,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _onFavoriteTap,
+        customBorder: const CircleBorder(),
+        child: Container(
+          width: 32.w,
+          height: 32.w,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.08),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            isFavorite ? Icons.favorite : Icons.favorite_border_rounded,
+            size: 16.sp,
+            color: _priceRed,
+          ),
         ),
       ),
     );
@@ -170,11 +194,11 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
 
   Widget _buildImageSection(bool isFavorite) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, 0),
+      padding: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final areaWidth = constraints.maxWidth;
-          final glowSize = areaWidth * 0.78;
+          final glowSize = areaWidth * 0.72;
 
           return Stack(
             clipBehavior: Clip.none,
@@ -194,14 +218,24 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
                       height: glowSize,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: _innerGlow.withOpacity(0.75),
+                        color: _innerGlow.withOpacity(0.9),
                       ),
                     ),
                     CachedNetworkImage(
                       imageUrl: widget.product.thumbnail,
-                      width: areaWidth * 0.68,
+                      width: areaWidth * 0.72,
                       height: 108.h,
                       fit: BoxFit.contain,
+                      placeholder: (_, __) => SizedBox(
+                        width: 24.w,
+                        height: 24.w,
+                        child: const CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      errorWidget: (_, __, ___) => Icon(
+                        Icons.image_not_supported_outlined,
+                        size: 32.sp,
+                        color: _muted,
+                      ),
                     ),
                   ],
                 ),
@@ -300,31 +334,46 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
-              GlobalFunction.price(ref: ref, price: _discountPrice.toString()),
-              style: TextStyle(
-                color: _priceRed,
-                fontWeight: FontWeight.w700,
-                fontSize: 17.sp,
+            Flexible(
+              child: Text(
+                GlobalFunction.price(
+                  ref: ref,
+                  price: _discountPrice.toString(),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _priceRed,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 17.sp,
+                ),
               ),
             ),
-            Gap(8.w),
-            Text(
-              GlobalFunction.price(ref: ref, price: _sellingPrice.toString()),
-              style: TextStyle(
-                color: const Color(0xFF9E9E9E),
-                fontSize: 12.sp,
-                fontWeight: FontWeight.w500,
-                decoration: TextDecoration.lineThrough,
-                decorationColor: const Color(0xFF9E9E9E),
-                decorationThickness: 1.5,
+            Gap(6.w),
+            Flexible(
+              child: Text(
+                GlobalFunction.price(
+                  ref: ref,
+                  price: _sellingPrice.toString(),
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: _muted,
+                  fontSize: 12.sp,
+                  fontWeight: FontWeight.w500,
+                  decoration: TextDecoration.lineThrough,
+                  decorationColor: _muted,
+                  decorationThickness: 1.5,
+                ),
               ),
             ),
           ],
         ),
         if (_savingsAmount > 0) ...[
-          Gap(8.h),
+          Gap(6.h),
           Container(
             width: double.infinity,
             padding: EdgeInsets.symmetric(vertical: 6.h),
@@ -337,7 +386,7 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
               'Save ${GlobalFunction.price(ref: ref, price: _savingsAmount.toString())}',
               style: TextStyle(
                 color: _priceRed,
-                fontSize: 11.sp,
+                fontSize: 10.sp,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -358,13 +407,13 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
         duration: const Duration(milliseconds: 120),
         child: Container(
           width: double.infinity,
-          height: 42.h,
+          height: 40.h,
           decoration: BoxDecoration(
             color: _priceRed,
-            borderRadius: BorderRadius.circular(14.r),
+            borderRadius: BorderRadius.circular(12.r),
             boxShadow: [
               BoxShadow(
-                color: _priceRed.withOpacity(0.25),
+                color: _priceRed.withOpacity(0.28),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -375,19 +424,19 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
             children: [
               SvgPicture.asset(
                 Assets.svg.shoppingBag,
-                height: 17.h,
-                width: 17.w,
+                height: 16.h,
+                width: 16.w,
                 colorFilter: const ColorFilter.mode(
                   Colors.white,
                   BlendMode.srcIn,
                 ),
               ),
-              Gap(8.w),
+              Gap(6.w),
               Text(
                 'Add to Cart',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 13.sp,
+                  fontSize: 12.sp,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -408,12 +457,12 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
         width: double.infinity,
         decoration: BoxDecoration(
           color: _cardBg,
-          borderRadius: BorderRadius.circular(24.r),
+          borderRadius: BorderRadius.circular(18.r),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 18,
-              offset: const Offset(0, 6),
+              color: Colors.black.withOpacity(0.07),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
@@ -422,7 +471,7 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
           children: [
             _buildImageSection(isFavorite),
             Padding(
-              padding: EdgeInsets.fromLTRB(14.w, 12.h, 14.w, 14.h),
+              padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -433,26 +482,26 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
                     style: AppTextStyle(context).bodyText.copyWith(
                           color: _titleColor,
                           fontWeight: FontWeight.w700,
-                          fontSize: 14.sp,
+                          fontSize: 13.sp,
                           height: 1.2,
                         ),
                   ),
-                  Gap(4.h),
+                  Gap(3.h),
                   Text(
                     _brandLabel,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: const Color(0xFF9E9E9E),
+                      color: _muted,
                       fontSize: 11.sp,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
-                  Gap(8.h),
+                  Gap(6.h),
                   _buildRatingRow(),
-                  Gap(10.h),
+                  Gap(8.h),
                   _buildPriceSection(),
-                  Gap(12.h),
+                  Gap(10.h),
                   _buildAddToCartButton(),
                 ],
               ),

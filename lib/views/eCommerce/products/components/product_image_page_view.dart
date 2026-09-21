@@ -439,7 +439,6 @@ class _ProductImagePageViewState extends ConsumerState<ProductImagePageView> {
           child: ClipRRect(
             borderRadius: BorderRadius.circular(15.r),
             child: SizedBox(
-              // height: 355.h,
               height: 480.h,
               width: MediaQuery.of(context).size.width,
               child: PageView.builder(
