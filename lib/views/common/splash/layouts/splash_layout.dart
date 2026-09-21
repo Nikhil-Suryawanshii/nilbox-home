@@ -107,8 +107,11 @@ class _SplashLayoutState extends ConsumerState<SplashLayout> {
   Widget build(BuildContext context) {
     return ConnectivityWidgetWrapper(
       offlineWidget: const OfflineScreen(),
-      child: Scaffold(
-        body: Center(
+      child: ColoredBox(
+        color: GlobalFunction.getContainerColor(),
+        child: Scaffold(
+          backgroundColor: GlobalFunction.getContainerColor(),
+          body: Center(
           child: Row(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -167,6 +170,7 @@ class _SplashLayoutState extends ConsumerState<SplashLayout> {
               ),
             ],
           ),
+        ),
         ),
       ),
     );

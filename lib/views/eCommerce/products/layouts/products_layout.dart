@@ -17,6 +17,7 @@ import 'package:ready_ecommerce/gen/assets.gen.dart';
 import 'package:ready_ecommerce/generated/l10n.dart';
 import 'package:ready_ecommerce/models/eCommerce/category/category.dart';
 import 'package:ready_ecommerce/models/eCommerce/common/product_filter_model.dart';
+import 'package:ready_ecommerce/models/eCommerce/product/product.dart';
 import 'package:ready_ecommerce/routes.dart';
 import 'package:ready_ecommerce/utils/context_less_navigation.dart';
 import 'package:ready_ecommerce/utils/global_function.dart';
@@ -677,6 +678,9 @@ class EcommerceProductsLayout extends ConsumerStatefulWidget {
 ///
 class _EcommerceProductsLayoutState
     extends ConsumerState<EcommerceProductsLayout> {
+  static const Color _pageBackground = Color(0xFFF5F5F5);
+  static const Color _headerBackground = Colors.white;
+
   final ScrollController scrollController = ScrollController();
   final ScrollController productScrollController = ScrollController();
   final TextEditingController searchController = TextEditingController();
@@ -764,42 +768,31 @@ class _EcommerceProductsLayoutState
 
   @override
   Widget build(BuildContext context) {
-    debugPrint("isList ${ref.watch(isListProvider)}");
-    SystemChrome.setSystemUIOverlayStyle(SystemUiOverlayStyle(
-        statusBarColor: GlobalFunction.getContainerColor()));
-    return SafeArea(
+    final hasSubCategories = widget.subCategories?.isNotEmpty ?? false;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        statusBarBrightness: Brightness.light,
+      ),
       child: Scaffold(
-        appBar: PreferredSize(
-          preferredSize: const Size.fromHeight(0),
-          child: AppBar(
-            elevation: 0,
-            automaticallyImplyLeading: false,
-          ),
-        ),
         resizeToAvoidBottomInset: false,
-        backgroundColor: Theme.of(context).scaffoldBackgroundColor ==
-            const Color.fromARGB(255, 1, 1, 2)
-            ? colors(context).dark
-            : colors(context).accentColor,
+        backgroundColor: _pageBackground,
         body: NestedScrollView(
           floatHeaderSlivers: false,
-          physics: NeverScrollableScrollPhysics(),
           headerSliverBuilder: (context, value) {
             return [
-              SliverList(
-                delegate: SliverChildListDelegate(
-                  [
-                    _customHeaderAppBarWidget(),
-                  ],
-                ),
+              SliverToBoxAdapter(
+                child: _buildHeaderRow(context),
               ),
               SliverPersistentHeader(
                 pinned: true,
                 delegate: _SliverAppBarDelegate(
-                  maxExtentS: widget.subCategories!.isNotEmpty ? 185.h : 70.h,
+                  maxExtentS: hasSubCategories ? 185.h : 72.h,
                   child: _buildFilterRow(context),
                 ),
-              )
+              ),
             ];
           },
           body: _buildProductsWidget(context),
@@ -808,14 +801,12 @@ class _EcommerceProductsLayoutState
     );
   }
 
-  Widget _customHeaderAppBarWidget() {
-    return _buildHeaderRow(context);
-  }
-
   Widget _buildHeaderRow(BuildContext context) {
+    final topInset = MediaQuery.paddingOf(context).top;
+
     return Container(
-      padding: EdgeInsets.only(right: 16.w, bottom: 8.h,top: 5,left: 16.w),
-      color: GlobalFunction.getContainerColor(),
+      padding: EdgeInsets.fromLTRB(16.w, topInset + 8.h, 16.w, 12.h),
+      color: _headerBackground,
       // color: Colors.red,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -900,8 +891,7 @@ class _EcommerceProductsLayoutState
 
   Widget _buildFilterRow(BuildContext context) {
     return Container(
-      color: GlobalFunction.getContainerColor(),
-      // color: Colors.red,
+      color: _headerBackground,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -985,7 +975,7 @@ class _EcommerceProductsLayoutState
     return Consumer(builder: (context, ref, _) {
       return Container(
         height: 90.h,
-        color: GlobalFunction.getContainerColor(),
+        color: _headerBackground,
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -1090,21 +1080,18 @@ class _EcommerceProductsLayoutState
   }
 
   Widget _buildProductsWidget(BuildContext context) {
-    final productController = ref.watch(productControllerProvider.notifier);
-    final products = productController.products;
+    final productsState = ref.watch(productControllerProvider);
+    final products = productsState.valueOrNull ?? [];
 
-    if (ref.watch(productControllerProvider).isLoading) {
-      return Center(child: CircularProgressIndicator());
+    if (productsState.isLoading && products.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (products.isEmpty) {
       return const ProductNotFoundWidget();
     }
 
-    // return ref.watch(isListProvider)
-    //     ? _buildListProductsWidget(context)
-    //     : _buildGridProductsWidget(context);
-    return _buildGridProductsWidget(context);
+    return _buildGridProductsWidget(context, products);
   }
 
   Widget _buildListProductsWidget(BuildContext context) {
@@ -1151,51 +1138,52 @@ class _EcommerceProductsLayoutState
     );
   }
 
-  Widget _buildGridProductsWidget(BuildContext context) {
-    final products = ref.watch(productControllerProvider.notifier).products;
+  Widget _buildGridProductsWidget(
+    BuildContext context,
+    List<Product> products,
+  ) {
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
-    return AnimationLimiter(
-      child:
-      SizedBox(
-        child: MasonryGridView.count(
-          padding: EdgeInsets.only(left: 15,right: 15,top: 15,bottom: 10),
-          crossAxisCount: 2,
-          controller: scrollController,
-          mainAxisSpacing: 20.h,
-          crossAxisSpacing: 15.w,
-          itemCount: products.length,
-          shrinkWrap: true,
-          itemBuilder: (context, index) {
-            if (isLastPosition && scrollController.hasClients) {
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                scrollController.jumpTo(scrollPossition);
-                setState(() {
-                  isLastPosition = false;
-                });
-              });
-            }
-            final product = products[index];
-            return AnimationConfiguration.staggeredGrid(
-              duration: const Duration(milliseconds: 375),
-              position: index,
-              columnCount: 2,
-              child: ScaleAnimation(
-                child:  Padding(
-                  padding: EdgeInsets.only(top: index == 1 ? 31.h : 0.h,bottom: 0),
-                  child:  ProductCard(
-                    product: product,
-                    onTap: () => context.nav.pushNamed(
-                      Routes.getProductDetailsRouteName(
-                          AppConstants.appServiceName),
-                      arguments: products[index].id,
+    return CustomScrollView(
+      controller: scrollController,
+      slivers: [
+        SliverPadding(
+          padding: EdgeInsets.fromLTRB(12.w, 12.h, 12.w, bottomInset + 20.h),
+          sliver: SliverGrid(
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 2,
+              crossAxisSpacing: 12.w,
+              mainAxisSpacing: 12.h,
+              childAspectRatio: 0.46,
+            ),
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                if (isLastPosition && scrollController.hasClients) {
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    scrollController.jumpTo(scrollPossition);
+                    setState(() {
+                      isLastPosition = false;
+                    });
+                  });
+                }
+
+                final product = products[index];
+                return ProductCard(
+                  product: product,
+                  index: index,
+                  onTap: () => context.nav.pushNamed(
+                    Routes.getProductDetailsRouteName(
+                      AppConstants.appServiceName,
                     ),
+                    arguments: product.id,
                   ),
-                ),
-              ),
-            );
-          },
+                );
+              },
+              childCount: products.length,
+            ),
+          ),
         ),
-      ),
+      ],
     );
   }
 

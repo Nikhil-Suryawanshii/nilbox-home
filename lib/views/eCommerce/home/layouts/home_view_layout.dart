@@ -1302,6 +1302,7 @@ class _EcommerceHomeViewLayoutState
 
           return CategoryFilterTab(
             title: category.name,
+            imageUrl: category.id == -1 ? null : category.thumbnail,
             isSelected: isSelected,
             index: index,
             onTap: () {
@@ -1956,8 +1957,8 @@ class _EcommerceHomeViewLayoutState
             child: MasonryGridView.count(
               padding: EdgeInsets.only(left: 15, right: 15, top: 0, bottom: 100),
               crossAxisCount: 2,
-              mainAxisSpacing: 5.h,
-              crossAxisSpacing: 15.w,
+              mainAxisSpacing: 12.h,
+              crossAxisSpacing: 12.w,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: products.length,
               shrinkWrap: true,
@@ -1969,7 +1970,7 @@ class _EcommerceHomeViewLayoutState
                   columnCount: 2,
                   child: ScaleAnimation(
                     child: Padding(
-                      padding: EdgeInsets.only(top: 20.h, bottom: 0),
+                      padding: EdgeInsets.only(top: 8.h, bottom: 0),
                       child: PopularProductCard(
                         product: product,
                         index: index,

@@ -40,11 +40,21 @@ class Category {
     };
   }
 
+  static String _readThumbnail(Map<String, dynamic> map) {
+    for (final key in ['thumbnail', 'logo', 'image', 'category_logo']) {
+      final value = map[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return '';
+  }
+
   factory Category.fromMap(Map<String, dynamic> map) {
     return Category(
         id: map['id'].toInt() as int,
         name: map['name'] as String,
-        thumbnail: map['thumbnail'] as String,
+        thumbnail: _readThumbnail(map),
         displayOrder: map['display_order'].toInt() as int,
         subCategories: List<SubCategory>.from(
             (map['sub_categories'] as List<dynamic>).map<SubCategory>(
@@ -109,7 +119,7 @@ class SubCategory {
     return SubCategory(
       id: map['id'].toInt() as int,
       name: map['name'] as String,
-      thumbnail: map['thumbnail'] as String,
+      thumbnail: Category._readThumbnail(map),
       displayOrder: map['display_order'].toInt() as int,
     );
   }

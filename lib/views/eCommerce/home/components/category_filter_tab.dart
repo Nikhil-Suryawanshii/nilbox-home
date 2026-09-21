@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -11,6 +12,7 @@ import '../../../../gen/assets.gen.dart';
 
 class CategoryFilterTab extends StatelessWidget {
   final String title;
+  final String? imageUrl;
   final bool isSelected;
   final int index;
   final VoidCallback onTap;
@@ -18,6 +20,7 @@ class CategoryFilterTab extends StatelessWidget {
   const CategoryFilterTab({
     super.key,
     required this.title,
+    this.imageUrl,
     required this.isSelected,
     required this.index,
     required this.onTap,
@@ -55,10 +58,52 @@ class CategoryFilterTab extends StatelessWidget {
     onTap();
   }
 
+  bool get _hasImage => imageUrl != null && imageUrl!.trim().isNotEmpty;
+
+  Widget _buildLeadingIcon(_CategoryStyle style) {
+    if (_hasImage) {
+      return Container(
+        width: 22.w,
+        height: 22.w,
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.white : const Color(0xFFF5F5F5),
+          shape: BoxShape.circle,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: CachedNetworkImage(
+          imageUrl: imageUrl!,
+          fit: BoxFit.cover,
+          errorWidget: (_, __, ___) => Icon(
+            style.icon,
+            size: 14.sp,
+            color: isSelected ? EcommerceAppColor.carrotOrange : style.accent,
+          ),
+          placeholder: (_, __) => Center(
+            child: SizedBox(
+              width: 12.w,
+              height: 12.w,
+              child: CircularProgressIndicator(
+                strokeWidth: 1.5,
+                color: isSelected ? EcommerceAppColor.carrotOrange : style.accent,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Icon(
+      style.icon,
+      size: 18.sp,
+      color: isSelected ? Colors.white : style.accent,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final style = _styleForTitle();
     final stagger = (index * 70).ms;
+    final leading = _buildLeadingIcon(style);
 
     return GestureDetector(
       onTap: _handleTap,
@@ -94,18 +139,15 @@ class CategoryFilterTab extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              style.icon,
-              size: 18.sp,
-              color: isSelected ? Colors.white : style.accent,
-            )
-                .animate(target: isSelected ? 1 : 0)
-                .scale(
-                  begin: const Offset(1, 1),
-                  end: const Offset(1.25, 1.25),
-                  duration: 450.ms,
-                  curve: Curves.elasticOut,
-                ),
+            if (_hasImage)
+              leading
+            else
+              leading.animate(target: isSelected ? 1 : 0).scale(
+                    begin: const Offset(1, 1),
+                    end: const Offset(1.25, 1.25),
+                    duration: 450.ms,
+                    curve: Curves.elasticOut,
+                  ),
             Gap(6.w),
             Text(
               title,

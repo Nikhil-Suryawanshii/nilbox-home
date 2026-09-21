@@ -248,6 +248,30 @@ class ProductController extends StateNotifier<AsyncValue<List<Product>>> {
   Filters? _filter;
   Filters? get filter => _filter;
 
+  void _logProductsApiResponse({
+    required ProductFilterModel filter,
+    required dynamic responseData,
+  }) {
+    debugPrint('========== PRODUCTS API ==========');
+    debugPrint('Request params: ${filter.toMap()}');
+    if (responseData is Map<String, dynamic>) {
+      final data = responseData['data'];
+      debugPrint('Total: ${data?['total']}');
+      final products = data?['products'];
+      if (products is List) {
+        debugPrint('Products count: ${products.length}');
+        for (var i = 0; i < products.length; i++) {
+          debugPrint('Product[$i]: ${products[i]}');
+        }
+      } else {
+        debugPrint('Full response: $responseData');
+      }
+    } else {
+      debugPrint('Full response: $responseData');
+    }
+    debugPrint('==================================');
+  }
+
   /// 🔥 NEW METHOD FOR REFRESH
   Future<void> refreshProducts({
     required ProductFilterModel filter,
@@ -258,6 +282,8 @@ class ProductController extends StateNotifier<AsyncValue<List<Product>>> {
       final response = await ref
           .read(productServiceProvider)
           .getCategoryWiseProducts(productFilterModel: filter);
+
+      _logProductsApiResponse(filter: filter, responseData: response.data);
 
       _total = response.data['data']['total'];
       List<dynamic> productData = response.data['data']['products'];
@@ -284,6 +310,11 @@ class ProductController extends StateNotifier<AsyncValue<List<Product>>> {
       final response = await ref
           .read(productServiceProvider)
           .getCategoryWiseProducts(productFilterModel: productFilterModel);
+
+      _logProductsApiResponse(
+        filter: productFilterModel,
+        responseData: response.data,
+      );
 
       _total = response.data['data']['total'];
       List<dynamic> productData = response.data['data']['products'];

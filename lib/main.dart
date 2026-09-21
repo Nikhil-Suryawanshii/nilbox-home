@@ -114,6 +114,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_downloader/flutter_downloader.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -214,6 +215,8 @@ void main() async {
   Hive.registerAdapter(HiveCartModelAdapter());
   await Hive.openBox<HiveCartModel>(AppConstants.cartModelBox);
 
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
   runApp(
     const ProviderScope(
       child: MyApp(),
@@ -265,20 +268,7 @@ class MyApp extends StatelessWidget {
                   onGenerateRoute: generatedRoutes,
                   initialRoute: Routes.splash,
                   builder: (context, child) {
-                    // add safety wrapper
-                    return Column(
-                      children: [
-                        Expanded(
-                          child: child ?? const SplashLayout(),
-                        ),
-                        Container(
-                          color: isDark
-                              ? EcommerceAppColor.black
-                              : EcommerceAppColor.white,
-                          height: MediaQuery.of(context).padding.bottom,
-                        )
-                      ],
-                    );
+                    return child ?? const SplashLayout();
                   },
                 ),
               );

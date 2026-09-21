@@ -2724,14 +2724,16 @@ class _EcommerceProductDetailsLayoutState
                                       Gap(10.w),
 
                                       /// SELLER NAME
-                                      Text(
-                                        productDetails.product.shop.name,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: TextStyle(
-                                          fontSize: 14.sp,
-                                          fontWeight: FontWeight.w600,
-                                          color: Colors.black,
+                                      Expanded(
+                                        child: Text(
+                                          productDetails.product.shop.name,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 14.sp,
+                                            fontWeight: FontWeight.w600,
+                                            color: Colors.black,
+                                          ),
                                         ),
                                       ),
 

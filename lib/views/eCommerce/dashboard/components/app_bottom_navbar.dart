@@ -1,152 +1,4 @@
-// import 'package:flutter/material.dart';
-// import 'package:flutter_riverpod/flutter_riverpod.dart';
-// import 'package:flutter_screenutil/flutter_screenutil.dart';
-// import 'package:flutter_svg/svg.dart';
-// import 'package:ready_ecommerce/config/app_text_style.dart';
-// import 'package:ready_ecommerce/config/theme.dart';
-// import 'package:ready_ecommerce/controllers/eCommerce/cart/cart_controller.dart';
-// import 'package:ready_ecommerce/controllers/misc/misc_controller.dart';
-// import 'package:ready_ecommerce/views/eCommerce/dashboard/layouts/dashboard_layout.dart';
-
-// class AppBottomNavbar extends ConsumerWidget {
-//   const AppBottomNavbar({
-//     super.key,
-//     required this.bottomItem,
-//     required this.onSelect,
-//   });
-//   final List<BottomItem> bottomItem;
-//   final Function(int? index) onSelect;
-
-//   @override
-//   Widget build(BuildContext context, WidgetRef ref) {
-//     return Container(
-//       height: 80.h,
-//       padding: EdgeInsets.symmetric(vertical: 5.h),
-//       width: double.infinity,
-//       decoration: BoxDecoration(
-//         color: Theme.of(context).scaffoldBackgroundColor,
-//       ),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceAround,
-//         children: List.generate(
-//           bottomItem.length,
-//           (index) {
-//             return GestureDetector(
-//               onTap: () {
-//                 onSelect(index);
-//               },
-//               child: Container(
-//                 color: Colors.transparent,
-//                 child: _buildBottomItem(
-//                   bottomItem: bottomItem[index],
-//                   index: index,
-//                   context: context,
-//                   ref: ref,
-//                 ),
-//               ),
-//             );
-//           },
-//         ),
-//       ),
-//     );
-//   }
-
-//   Widget _buildBottomItem({
-//     required BottomItem bottomItem,
-//     required int index,
-//     required BuildContext context,
-//     required WidgetRef ref,
-//   }) {
-//     final int selectedIndex = ref.watch(selectedTabIndexProvider);
-
-//     final isSelected = index == selectedIndex;
-
-//     return AnimatedContainer(
-//       duration: const Duration(milliseconds: 300),
-//       decoration: isSelected
-//           ? BoxDecoration(
-//               borderRadius: BorderRadius.circular(8.r),
-//               color: colors(context).primaryColor?.withOpacity(0.1))
-//           : null,
-//       width: isSelected ? 100.w : 80.w,
-//       child: Column(
-//         mainAxisAlignment: MainAxisAlignment.center,
-//         children: [
-//           Stack(
-//             children: [
-//               Container(
-//                 padding: EdgeInsets.zero,
-//                 height: 42.h,
-//                 width: 42.w,
-//                 decoration: BoxDecoration(
-//                   borderRadius: BorderRadius.circular(12.r),
-//                 ),
-//                 child: Center(
-//                   child: SvgPicture.asset(
-//                     colorFilter: isSelected
-//                         ? ColorFilter.mode(
-//                             colors(context).primaryColor!, BlendMode.srcIn)
-//                         : null,
-//                     isSelected ? bottomItem.activeIcon : bottomItem.icon,
-//                     height: 26.h,
-//                     width: 26.w,
-//                   ),
-//                 ),
-//               ),
-//               if (index == 1 && !isSelected) ...[
-//                 Positioned(
-//                   top: 0,
-//                   right: 0,
-//                   child: Consumer(
-//                     builder: (context, ref, _) {
-//                       return ref.watch(cartController).cartItems.isNotEmpty
-//                           ? CircleAvatar(
-//                               radius: 7.r,
-//                               backgroundColor: colors(context).errorColor,
-//                               child: Center(
-//                                 child: Text(
-//                                   ref
-//                                       .watch(cartController.notifier)
-//                                       .cartItems
-//                                       .length
-//                                       .toString(),
-//                                   style: AppTextStyle(context)
-//                                       .bodyTextSmall
-//                                       .copyWith(fontSize: 10)
-//                                       .copyWith(color: colors(context).light),
-//                                 ),
-//                               ),
-//                             )
-//                           : const SizedBox();
-//                     },
-//                   ),
-//                 )
-//               ]
-//             ],
-//           ),
-//           if (isSelected)
-//             TweenAnimationBuilder<double>(
-//               tween: Tween<double>(begin: -5, end: 1),
-//               duration: const Duration(milliseconds: 300),
-//               builder: (context, value, child) {
-//                 return Text(
-//                   bottomItem.name,
-//                   style: AppTextStyle(context).bodyTextSmall.copyWith(
-//                         fontWeight: FontWeight.w500,
-//                         color: isSelected
-//                             ? colors(context).primaryColor
-//                             : colors(context).bodyTextSmallColor,
-//                       ),
-//                 );
-//               },
-//             )
-//         ],
-//       ),
-//     );
-//   }
-// }
-
-
+import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -155,35 +7,92 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:ready_ecommerce/config/app_text_style.dart';
 import 'package:ready_ecommerce/config/theme.dart';
-import 'package:ready_ecommerce/providers/seller/common_provider.dart';
-
-import 'package:ready_ecommerce/controllers/eCommerce/cart/cart_controller.dart';
 import 'package:ready_ecommerce/controllers/misc/misc_controller.dart';
 import 'package:ready_ecommerce/views/eCommerce/dashboard/layouts/dashboard_layout.dart';
 
-import '../../../../gen/assets.gen.dart';
-import '../../../seller/auth/seller_auth_gate_view.dart';
-import '../../../seller/dashboard/product_management/add_product_view.dart';
-
+/// Platform-specific bottom navigation:
+/// - iOS: glass pill floating bar (existing design)
+/// - Android: simple Material docked bar (same tabs + Sell)
 class AppBottomNavbar extends ConsumerWidget {
   const AppBottomNavbar({
     super.key,
     required this.bottomItem,
     required this.onSelect,
+    this.onSellTap,
   });
+
   final List<BottomItem> bottomItem;
   final Function(int? index) onSelect;
+  final VoidCallback? onSellTap;
 
+  static bool get isIOS => Platform.isIOS;
 
+  static double horizontalMargin(BuildContext context) => isIOS ? 16.w : 0;
 
-  static double horizontalMargin(BuildContext context) => 16.w;
+  static double sellCenterGap(BuildContext context) => isIOS ? 54.w : 56.w;
 
-  static double sellCenterGap(BuildContext context) => 54.w;
+  static double systemBottomInset(BuildContext context) {
+    return MediaQuery.viewPaddingOf(context).bottom;
+  }
+
+  /// Space above the system navigation stripe / home indicator.
+  static double bottomSafeMargin(BuildContext context) {
+    final inset = systemBottomInset(context);
+    if (isIOS) {
+      return inset > 0 ? inset + 8.h : 12.h;
+    }
+    // Android: sit flush above nav stripe with a small breathing gap.
+    return inset > 0 ? inset + 4.h : 8.h;
+  }
+
+  static double barHeight(BuildContext context) => isIOS ? 75.h : 62.h;
+
+  static double shellHeight(BuildContext context) {
+    if (isIOS) {
+      return 25.h + barHeight(context) + bottomSafeMargin(context);
+    }
+    // Android: room for slightly elevated Sell FAB above the bar.
+    return 18.h + barHeight(context) + bottomSafeMargin(context);
+  }
+
+  static double sellFabBottom(BuildContext context) {
+    if (isIOS) {
+      return bottomSafeMargin(context) + 12.h;
+    }
+    return bottomSafeMargin(context) + 6.h;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sideMargin = horizontalMargin(context);
-    final sellGap = sellCenterGap(context);
+    if (isIOS) {
+      return _IosGlassBottomNavbar(
+        bottomItem: bottomItem,
+        onSelect: onSelect,
+      );
+    }
+    return _AndroidSimpleBottomNavbar(
+      bottomItem: bottomItem,
+      onSelect: onSelect,
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// iOS — keep existing glass pill design
+// -----------------------------------------------------------------------------
+class _IosGlassBottomNavbar extends ConsumerWidget {
+  const _IosGlassBottomNavbar({
+    required this.bottomItem,
+    required this.onSelect,
+  });
+
+  final List<BottomItem> bottomItem;
+  final Function(int? index) onSelect;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sideMargin = AppBottomNavbar.horizontalMargin(context);
+    final sellGap = AppBottomNavbar.sellCenterGap(context);
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: sideMargin),
@@ -192,7 +101,7 @@ class AppBottomNavbar extends ConsumerWidget {
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 28, sigmaY: 28),
           child: Container(
-            height: 75.h,
+            height: AppBottomNavbar.barHeight(context),
             padding: EdgeInsets.symmetric(horizontal: 6.w),
             width: double.infinity,
             decoration: BoxDecoration(
@@ -213,36 +122,36 @@ class AppBottomNavbar extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _buildNavTap(
+                  child: _NavTap(
                     bottomItem: bottomItem[0],
                     index: 0,
-                    context: context,
-                    ref: ref,
+                    onSelect: onSelect,
+                    style: _NavItemStyle.ios,
                   ),
                 ),
                 Expanded(
-                  child: _buildNavTap(
+                  child: _NavTap(
                     bottomItem: bottomItem[1],
                     index: 1,
-                    context: context,
-                    ref: ref,
+                    onSelect: onSelect,
+                    style: _NavItemStyle.ios,
                   ),
                 ),
                 SizedBox(width: sellGap),
                 Expanded(
-                  child: _buildNavTap(
+                  child: _NavTap(
                     bottomItem: bottomItem[2],
                     index: 2,
-                    context: context,
-                    ref: ref,
+                    onSelect: onSelect,
+                    style: _NavItemStyle.ios,
                   ),
                 ),
                 Expanded(
-                  child: _buildNavTap(
+                  child: _NavTap(
                     bottomItem: bottomItem[3],
                     index: 3,
-                    context: context,
-                    ref: ref,
+                    onSelect: onSelect,
+                    style: _NavItemStyle.ios,
                   ),
                 ),
               ],
@@ -252,45 +161,127 @@ class AppBottomNavbar extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildNavTap({
-    required BottomItem bottomItem,
-    required int index,
-    required BuildContext context,
-    required WidgetRef ref,
-  }) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () => onSelect(index),
-      child: Center(
-        child: _buildBottomItem(
-          bottomItem: bottomItem,
-          index: index,
-          context: context,
-          ref: ref,
+// -----------------------------------------------------------------------------
+// Android — simple Material docked bar, same tabs + Sell gap
+// -----------------------------------------------------------------------------
+class _AndroidSimpleBottomNavbar extends ConsumerWidget {
+  const _AndroidSimpleBottomNavbar({
+    required this.bottomItem,
+    required this.onSelect,
+  });
+
+  final List<BottomItem> bottomItem;
+  final Function(int? index) onSelect;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sellGap = AppBottomNavbar.sellCenterGap(context);
+
+    return Material(
+      color: Colors.white,
+      elevation: 8,
+      shadowColor: Colors.black.withOpacity(0.12),
+      child: Container(
+        height: AppBottomNavbar.barHeight(context),
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border(
+            top: BorderSide(
+              color: Colors.black.withOpacity(0.08),
+              width: 0.8,
+            ),
+          ),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: _NavTap(
+                bottomItem: bottomItem[0],
+                index: 0,
+                onSelect: onSelect,
+                style: _NavItemStyle.android,
+              ),
+            ),
+            Expanded(
+              child: _NavTap(
+                bottomItem: bottomItem[1],
+                index: 1,
+                onSelect: onSelect,
+                style: _NavItemStyle.android,
+              ),
+            ),
+            SizedBox(width: sellGap),
+            Expanded(
+              child: _NavTap(
+                bottomItem: bottomItem[2],
+                index: 2,
+                onSelect: onSelect,
+                style: _NavItemStyle.android,
+              ),
+            ),
+            Expanded(
+              child: _NavTap(
+                bottomItem: bottomItem[3],
+                index: 3,
+                onSelect: onSelect,
+                style: _NavItemStyle.android,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildBottomItem({
-    required BottomItem bottomItem,
-    required int index,
-    required BuildContext context,
-    required WidgetRef ref,
-  }) {
-    final int selectedIndex = ref.watch(selectedTabIndexProvider);
+enum _NavItemStyle { ios, android }
+
+class _NavTap extends ConsumerWidget {
+  const _NavTap({
+    required this.bottomItem,
+    required this.index,
+    required this.onSelect,
+    required this.style,
+  });
+
+  final BottomItem bottomItem;
+  final int index;
+  final Function(int? index) onSelect;
+  final _NavItemStyle style;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onSelect(index),
+      child: Center(
+        child: style == _NavItemStyle.ios
+            ? _IosNavItem(bottomItem: bottomItem, index: index)
+            : _AndroidNavItem(bottomItem: bottomItem, index: index),
+      ),
+    );
+  }
+}
+
+class _IosNavItem extends ConsumerWidget {
+  const _IosNavItem({
+    required this.bottomItem,
+    required this.index,
+  });
+
+  final BottomItem bottomItem;
+  final int index;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedIndex = ref.watch(selectedTabIndexProvider);
     final isSelected = index == selectedIndex;
+    final iconPath = isSelected ? bottomItem.activeIcon : bottomItem.icon;
 
-    // Determine the icon path dynamically
-    final String iconPath = isSelected ? bottomItem.activeIcon : bottomItem.icon;
-    // if (bottomItem.isSpacer) {
-    //   return const SizedBox(width: 10); // 👈 controls spacing
-    // }
     return AnimatedContainer(
-      // 🛑 3. VISUAL PILL: This grows/shrinks, but because it is inside
-      // the 'Center' widget above, it doesn't affect the neighbor's position.
-      // color: Colors.red,
       duration: const Duration(milliseconds: 350),
       curve: Curves.easeOutCubic,
       child: Column(
@@ -301,7 +292,6 @@ class AppBottomNavbar extends ConsumerWidget {
             alignment: Alignment.center,
             clipBehavior: Clip.none,
             children: [
-              // The Orange Circle
               Container(
                 height: 37.h,
                 width: 37.w,
@@ -310,8 +300,6 @@ class AppBottomNavbar extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(50.r),
                 ),
               ),
-
-              // The Icon
               SizedBox(
                 height: 37.h,
                 width: 37.w,
@@ -322,9 +310,7 @@ class AppBottomNavbar extends ConsumerWidget {
                       duration: const Duration(milliseconds: 350),
                       switchInCurve: Curves.easeOutBack,
                       switchOutCurve: Curves.easeInBack,
-                      transitionBuilder: (Widget child, Animation<double> animation) {
-                        // Logic: Rocket slides up, others just fade/scale slightly
-                        // This prevents visual glitches on normal tabs
+                      transitionBuilder: (child, animation) {
                         if (index == 0 && isSelected) {
                           return SlideTransition(
                             position: Tween<Offset>(
@@ -338,11 +324,13 @@ class AppBottomNavbar extends ConsumerWidget {
                       },
                       child: SvgPicture.asset(
                         iconPath,
-                        key: ValueKey<String>(iconPath), // Triggers animation
+                        key: ValueKey<String>(iconPath),
                         colorFilter: isSelected
-                            ? ColorFilter.mode(colors(context).light!, BlendMode.srcIn)
-                            : ColorFilter.mode(colors(context).dark!, BlendMode.srcIn),
-                        height: index == 2 ? 20 : 26.h, // Tweaked icon size slightly
+                            ? ColorFilter.mode(
+                                colors(context).light!, BlendMode.srcIn)
+                            : ColorFilter.mode(
+                                colors(context).dark!, BlendMode.srcIn),
+                        height: index == 2 ? 20 : 26.h,
                         width: 20.w,
                         fit: BoxFit.contain,
                       ),
@@ -352,9 +340,6 @@ class AppBottomNavbar extends ConsumerWidget {
               ),
             ],
           ),
-
-          // The Text Label (Only shows when selected to save space, or keep your logic)
-          // I constrained the width to prevent text from pushing layout
           Container(
             constraints: BoxConstraints(maxWidth: 75.w),
             child: Text(
@@ -363,14 +348,71 @@ class AppBottomNavbar extends ConsumerWidget {
               overflow: TextOverflow.ellipsis,
               textAlign: TextAlign.center,
               style: AppTextStyle(context).bodyTextSmall.copyWith(
-                fontSize: 10.sp,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: Colors.black,
-              ),
+                    fontSize: 10.sp,
+                    fontWeight:
+                        isSelected ? FontWeight.w700 : FontWeight.w500,
+                    color: Colors.black,
+                  ),
             ),
-          )
+          ),
         ],
       ),
+    );
+  }
+}
+
+class _AndroidNavItem extends ConsumerWidget {
+  const _AndroidNavItem({
+    required this.bottomItem,
+    required this.index,
+  });
+
+  final BottomItem bottomItem;
+  final int index;
+
+  static const _accent = Color(0xFFF57C00);
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedIndex = ref.watch(selectedTabIndexProvider);
+    final isSelected = index == selectedIndex;
+    final iconPath = isSelected ? bottomItem.activeIcon : bottomItem.icon;
+    final color = isSelected ? _accent : const Color(0xFF6B7280);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        SvgPicture.asset(
+          iconPath,
+          height: 24.h,
+          width: 24.w,
+          fit: BoxFit.contain,
+          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+        ),
+        SizedBox(height: 4.h),
+        Text(
+          bottomItem.name,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: AppTextStyle(context).bodyTextSmall.copyWith(
+                fontSize: 11.sp,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                color: color,
+              ),
+        ),
+        SizedBox(height: 2.h),
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          height: 3.h,
+          width: isSelected ? 18.w : 0,
+          decoration: BoxDecoration(
+            color: _accent,
+            borderRadius: BorderRadius.circular(2.r),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -656,85 +656,69 @@ class _EcommerceDashboardLayoutState
     _pageController.jumpToPage(index);
   }
 
+  Future<void> _onSellTap(BuildContext context) async {
+    final token = await ref.read(sellerHiveServiceProvider).getToken();
+    final bool isSellerLoggedIn = token != null && token.isNotEmpty;
+
+    if (!context.mounted) return;
+
+    if (isSellerLoggedIn) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const EcommerceAddProductView(),
+        ),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SellerAuthGateView(),
+        ),
+      );
+    }
+  }
+
   Widget _buildSellFab(BuildContext context) {
+    final isIOS = AppBottomNavbar.isIOS;
+
     return GestureDetector(
-      onTap: () async {
-        // Navigator.push(
-        //   context,
-        //   MaterialPageRoute(
-        //       builder: (context) => const EcommerceAddProductView()),
-        // );
-
-        // 1. Check for Seller Token
-        final token = await ref.read(sellerHiveServiceProvider).getToken();
-        final bool isSellerLoggedIn = token != null && token.isNotEmpty;
-
-        // 2. Navigate based on status
-        if (context.mounted) {
-          if (isSellerLoggedIn) {
-            // ✅ Logged In -> Open Add Product
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const EcommerceAddProductView()),
-            );
-          } else {
-            // ❌ Not Logged In -> Open Seller Login (AuthGate)
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                  builder: (context) => const SellerAuthGateView()),
-            );
-          }
-        }
-      },
+      onTap: () => _onSellTap(context),
       child: Padding(
-        padding: const EdgeInsets.only(top: 35),
+        // iOS FAB sits in the glass pill gap; Android FAB is slightly elevated.
+        padding: EdgeInsets.only(top: isIOS ? 35 : 8),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 54, // Adjust size if needed to match the image exactly
-              height: 54,
+              width: isIOS ? 54 : 52,
+              height: isIOS ? 54 : 52,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFFFFFFFF), // A closer orange color to the image
-                // Add the white border
+                color: Colors.white,
                 border: Border.all(
                   color: Colors.white,
-                  width: 4.0, // Thickness of the white ring
+                  width: isIOS ? 4.0 : 3.0,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF000000).withOpacity(0.2),
-                    blurRadius: 10, // Reduced blur radius for a sharper shadow
-                    offset: const Offset(0, 5), // Adjusted offset
+                    blurRadius: isIOS ? 10 : 8,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Container(
-                width: 44, // Adjust size if needed to match the image exactly
-                height: 44,
-                decoration: BoxDecoration(
+                width: isIOS ? 44 : 42,
+                height: isIOS ? 44 : 42,
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFF57C00), // A closer orange color to the image
-                  // Add the white border
-                  // border: Border.all(
-                  //   color: Colors.white,
-                  //   width: 4.0, // Thickness of the white ring
-                  // ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF000000).withOpacity(0.2),
-                      blurRadius: 3.8, // Reduced blur radius for a sharper shadow
-                      offset: const Offset(0, 5), // Adjusted offset
-                    ),
-                  ],
+                  color: Color(0xFFF57C00),
                 ),
                 child: Center(
                   child: SvgPicture.asset(
-                    Assets.svg.camera, // Ensure you have a camera icon asset
-                    width: 24, // Slightly smaller icon
+                    Assets.svg.camera,
+                    width: 22,
                     colorFilter: const ColorFilter.mode(
                       Colors.white,
                       BlendMode.srcIn,
@@ -743,12 +727,12 @@ class _EcommerceDashboardLayoutState
                 ),
               ),
             ),
-            const SizedBox(height: 6),
-             Text(
+            SizedBox(height: isIOS ? 6 : 4),
+            Text(
               'Sell',
               style: TextStyle(
-                fontSize: 11.sp, // Slightly larger font size
-                fontWeight: FontWeight.w600, // Semi-bold weight
+                fontSize: 11.sp,
+                fontWeight: FontWeight.w600,
                 color: Colors.black,
               ),
             ),
@@ -790,16 +774,21 @@ class _EcommerceDashboardLayoutState
             // Watch this to rebuild navbar colors
             ref.watch(selectedTabIndexProvider);
 
-            return Container(
-              color: Colors.transparent,
-              height: 100.h,
+            final bottomMargin = AppBottomNavbar.bottomSafeMargin(context);
+            final isIOS = AppBottomNavbar.isIOS;
+
+            return SizedBox(
+              height: AppBottomNavbar.shellHeight(context),
               width: double.infinity,
               child: Stack(
                 clipBehavior: Clip.none,
                 alignment: Alignment.bottomCenter,
                 children: [
                   Padding(
-                    padding: EdgeInsets.only(top: 25.h),
+                    padding: EdgeInsets.only(
+                      top: isIOS ? 25.h : 18.h,
+                      bottom: bottomMargin,
+                    ),
                     child: AppBottomNavbar(
                       bottomItem: getBottomItems(
                         context: context,
@@ -808,11 +797,11 @@ class _EcommerceDashboardLayoutState
                       onSelect: (index) {
                         if (index != null) onItemTapped(index);
                       },
+                      onSellTap: () => _onSellTap(context),
                     ),
                   ),
-                  // /// 🔥 FIXED SELL FAB (ABSOLUTE POSITION)
                   Positioned(
-                    bottom: 20, // adjust for navbar height
+                    bottom: AppBottomNavbar.sellFabBottom(context),
                     left: 0,
                     right: 0,
                     child: Center(
