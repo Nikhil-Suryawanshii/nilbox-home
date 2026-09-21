@@ -8,11 +8,12 @@ import 'package:flutter_svg/svg.dart';
 import 'package:ready_ecommerce/config/app_text_style.dart';
 import 'package:ready_ecommerce/config/theme.dart';
 import 'package:ready_ecommerce/controllers/misc/misc_controller.dart';
+import 'package:ready_ecommerce/gen/assets.gen.dart';
 import 'package:ready_ecommerce/views/eCommerce/dashboard/layouts/dashboard_layout.dart';
 
 /// Platform-specific bottom navigation:
 /// - iOS: glass pill floating bar (existing design)
-/// - Android: simple Material docked bar (same tabs + Sell)
+/// - Android: docked white rounded bar flush above system nav (image design)
 class AppBottomNavbar extends ConsumerWidget {
   const AppBottomNavbar({
     super.key,
@@ -26,33 +27,38 @@ class AppBottomNavbar extends ConsumerWidget {
   final VoidCallback? onSellTap;
 
   static bool get isIOS => Platform.isIOS;
+  static bool get isAndroid => Platform.isAndroid;
+
+  static const androidAccent = Color(0xFFE53935);
+  static const androidSellOrange = Color(0xFFF57C00);
+  static const androidInactive = Color(0xFF6B7280);
 
   static double horizontalMargin(BuildContext context) => isIOS ? 16.w : 0;
 
-  static double sellCenterGap(BuildContext context) => isIOS ? 54.w : 56.w;
+  static double sellCenterGap(BuildContext context) => isIOS ? 54.w : 64.w;
 
   static double systemBottomInset(BuildContext context) {
     return MediaQuery.viewPaddingOf(context).bottom;
   }
 
-  /// Space above the system navigation stripe / home indicator.
+  /// iOS: float above home indicator.
+  /// Android: exactly the system nav height so the app bar sits flush on it.
   static double bottomSafeMargin(BuildContext context) {
     final inset = systemBottomInset(context);
     if (isIOS) {
       return inset > 0 ? inset + 8.h : 12.h;
     }
-    // Android: sit flush above nav stripe with a small breathing gap.
-    return inset > 0 ? inset + 4.h : 8.h;
+    return inset; // flush above Android system nav stripe
   }
 
-  static double barHeight(BuildContext context) => isIOS ? 75.h : 62.h;
+  static double barHeight(BuildContext context) => isIOS ? 75.h : 64.h;
 
   static double shellHeight(BuildContext context) {
     if (isIOS) {
       return 25.h + barHeight(context) + bottomSafeMargin(context);
     }
-    // Android: room for slightly elevated Sell FAB above the bar.
-    return 18.h + barHeight(context) + bottomSafeMargin(context);
+    // Android: only white bar + system nav inset (no extra gap above).
+    return barHeight(context) + bottomSafeMargin(context);
   }
 
   static double sellFabBottom(BuildContext context) {
@@ -70,9 +76,10 @@ class AppBottomNavbar extends ConsumerWidget {
         onSelect: onSelect,
       );
     }
-    return _AndroidSimpleBottomNavbar(
+    return _AndroidDockedBottomNavbar(
       bottomItem: bottomItem,
       onSelect: onSelect,
+      onSellTap: onSellTap,
     );
   }
 }
@@ -122,36 +129,32 @@ class _IosGlassBottomNavbar extends ConsumerWidget {
             child: Row(
               children: [
                 Expanded(
-                  child: _NavTap(
+                  child: _IosNavTap(
                     bottomItem: bottomItem[0],
                     index: 0,
                     onSelect: onSelect,
-                    style: _NavItemStyle.ios,
                   ),
                 ),
                 Expanded(
-                  child: _NavTap(
+                  child: _IosNavTap(
                     bottomItem: bottomItem[1],
                     index: 1,
                     onSelect: onSelect,
-                    style: _NavItemStyle.ios,
                   ),
                 ),
                 SizedBox(width: sellGap),
                 Expanded(
-                  child: _NavTap(
+                  child: _IosNavTap(
                     bottomItem: bottomItem[2],
                     index: 2,
                     onSelect: onSelect,
-                    style: _NavItemStyle.ios,
                   ),
                 ),
                 Expanded(
-                  child: _NavTap(
+                  child: _IosNavTap(
                     bottomItem: bottomItem[3],
                     index: 3,
                     onSelect: onSelect,
-                    style: _NavItemStyle.ios,
                   ),
                 ),
               ],
@@ -163,94 +166,16 @@ class _IosGlassBottomNavbar extends ConsumerWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Android — simple Material docked bar, same tabs + Sell gap
-// -----------------------------------------------------------------------------
-class _AndroidSimpleBottomNavbar extends ConsumerWidget {
-  const _AndroidSimpleBottomNavbar({
-    required this.bottomItem,
-    required this.onSelect,
-  });
-
-  final List<BottomItem> bottomItem;
-  final Function(int? index) onSelect;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sellGap = AppBottomNavbar.sellCenterGap(context);
-
-    return Material(
-      color: Colors.white,
-      elevation: 8,
-      shadowColor: Colors.black.withOpacity(0.12),
-      child: Container(
-        height: AppBottomNavbar.barHeight(context),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(
-              color: Colors.black.withOpacity(0.08),
-              width: 0.8,
-            ),
-          ),
-        ),
-        child: Row(
-          children: [
-            Expanded(
-              child: _NavTap(
-                bottomItem: bottomItem[0],
-                index: 0,
-                onSelect: onSelect,
-                style: _NavItemStyle.android,
-              ),
-            ),
-            Expanded(
-              child: _NavTap(
-                bottomItem: bottomItem[1],
-                index: 1,
-                onSelect: onSelect,
-                style: _NavItemStyle.android,
-              ),
-            ),
-            SizedBox(width: sellGap),
-            Expanded(
-              child: _NavTap(
-                bottomItem: bottomItem[2],
-                index: 2,
-                onSelect: onSelect,
-                style: _NavItemStyle.android,
-              ),
-            ),
-            Expanded(
-              child: _NavTap(
-                bottomItem: bottomItem[3],
-                index: 3,
-                onSelect: onSelect,
-                style: _NavItemStyle.android,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-enum _NavItemStyle { ios, android }
-
-class _NavTap extends ConsumerWidget {
-  const _NavTap({
+class _IosNavTap extends ConsumerWidget {
+  const _IosNavTap({
     required this.bottomItem,
     required this.index,
     required this.onSelect,
-    required this.style,
   });
 
   final BottomItem bottomItem;
   final int index;
   final Function(int? index) onSelect;
-  final _NavItemStyle style;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -258,9 +183,7 @@ class _NavTap extends ConsumerWidget {
       behavior: HitTestBehavior.opaque,
       onTap: () => onSelect(index),
       child: Center(
-        child: style == _NavItemStyle.ios
-            ? _IosNavItem(bottomItem: bottomItem, index: index)
-            : _AndroidNavItem(bottomItem: bottomItem, index: index),
+        child: _IosNavItem(bottomItem: bottomItem, index: index),
       ),
     );
   }
@@ -361,58 +284,233 @@ class _IosNavItem extends ConsumerWidget {
   }
 }
 
+// -----------------------------------------------------------------------------
+// Android — docked white bar flush above system nav (matches reference image)
+// -----------------------------------------------------------------------------
+class _AndroidDockedBottomNavbar extends ConsumerWidget {
+  const _AndroidDockedBottomNavbar({
+    required this.bottomItem,
+    required this.onSelect,
+    this.onSellTap,
+  });
+
+  final List<BottomItem> bottomItem;
+  final Function(int? index) onSelect;
+  final VoidCallback? onSellTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final systemInset = AppBottomNavbar.systemBottomInset(context);
+    final barH = AppBottomNavbar.barHeight(context);
+
+    return SizedBox(
+      height: barH + systemInset,
+      width: double.infinity,
+      child: Stack(
+        clipBehavior: Clip.none,
+        alignment: Alignment.bottomCenter,
+        children: [
+          // Dark strip behind Android system nav buttons.
+          if (systemInset > 0)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: systemInset,
+              child: const ColoredBox(color: Color(0xFF000000)),
+            ),
+
+          // White app nav bar — flush above the dark system nav area.
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: systemInset,
+            child: Container(
+              height: barH,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(22.r)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.10),
+                    blurRadius: 16,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _AndroidNavItem(
+                      bottomItem: bottomItem[0],
+                      index: 0,
+                      onSelect: onSelect,
+                    ),
+                  ),
+                  Expanded(
+                    child: _AndroidNavItem(
+                      bottomItem: bottomItem[1],
+                      index: 1,
+                      onSelect: onSelect,
+                    ),
+                  ),
+                  SizedBox(width: AppBottomNavbar.sellCenterGap(context)),
+                  Expanded(
+                    child: _AndroidNavItem(
+                      bottomItem: bottomItem[2],
+                      index: 2,
+                      onSelect: onSelect,
+                    ),
+                  ),
+                  Expanded(
+                    child: _AndroidNavItem(
+                      bottomItem: bottomItem[3],
+                      index: 3,
+                      onSelect: onSelect,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Sell FAB — raised slightly; overflows without reserving extra height.
+          Positioned(
+            bottom: systemInset + 6.h,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Transform.translate(
+                offset: Offset(0, -18.h),
+                child: _AndroidSellFab(onTap: onSellTap),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AndroidSellFab extends StatelessWidget {
+  const _AndroidSellFab({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56.w,
+            height: 56.w,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Colors.white,
+              border: Border.all(color: Colors.white, width: 4),
+              boxShadow: [
+                BoxShadow(
+                  color: AppBottomNavbar.androidSellOrange.withOpacity(0.35),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Container(
+              margin: EdgeInsets.all(2.w),
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: AppBottomNavbar.androidSellOrange,
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  Assets.svg.camera,
+                  width: 22.w,
+                  height: 22.w,
+                  colorFilter: const ColorFilter.mode(
+                    Colors.white,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          SizedBox(height: 4.h),
+          Text(
+            'Sell',
+            style: TextStyle(
+              fontSize: 11.sp,
+              fontWeight: FontWeight.w600,
+              color: AppBottomNavbar.androidInactive,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AndroidNavItem extends ConsumerWidget {
   const _AndroidNavItem({
     required this.bottomItem,
     required this.index,
+    required this.onSelect,
   });
 
   final BottomItem bottomItem;
   final int index;
-
-  static const _accent = Color(0xFFF57C00);
+  final Function(int? index) onSelect;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(selectedTabIndexProvider);
     final isSelected = index == selectedIndex;
     final iconPath = isSelected ? bottomItem.activeIcon : bottomItem.icon;
-    final color = isSelected ? _accent : const Color(0xFF6B7280);
+    final color = isSelected
+        ? AppBottomNavbar.androidAccent
+        : AppBottomNavbar.androidInactive;
 
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        SvgPicture.asset(
-          iconPath,
-          height: 24.h,
-          width: 24.w,
-          fit: BoxFit.contain,
-          colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
-        ),
-        SizedBox(height: 4.h),
-        Text(
-          bottomItem.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: AppTextStyle(context).bodyTextSmall.copyWith(
-                fontSize: 11.sp,
-                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                color: color,
-              ),
-        ),
-        SizedBox(height: 2.h),
-        AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 3.h,
-          width: isSelected ? 18.w : 0,
-          decoration: BoxDecoration(
-            color: _accent,
-            borderRadius: BorderRadius.circular(2.r),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onSelect(index),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SvgPicture.asset(
+            iconPath,
+            height: 24.h,
+            width: 24.w,
+            fit: BoxFit.contain,
+            colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
           ),
-        ),
-      ],
+          SizedBox(height: 3.h),
+          Text(
+            bottomItem.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: AppTextStyle(context).bodyTextSmall.copyWith(
+                  fontSize: 11.sp,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: color,
+                ),
+          ),
+          SizedBox(height: 4.h),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            height: 3.h,
+            width: isSelected ? 22.w : 0,
+            decoration: BoxDecoration(
+              color: AppBottomNavbar.androidAccent,
+              borderRadius: BorderRadius.circular(2.r),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

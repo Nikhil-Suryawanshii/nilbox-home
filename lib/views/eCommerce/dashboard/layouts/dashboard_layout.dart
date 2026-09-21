@@ -680,37 +680,32 @@ class _EcommerceDashboardLayoutState
   }
 
   Widget _buildSellFab(BuildContext context) {
-    final isIOS = AppBottomNavbar.isIOS;
-
+    // iOS-only overlay FAB (Android Sell is built into the docked bar).
     return GestureDetector(
       onTap: () => _onSellTap(context),
       child: Padding(
-        // iOS FAB sits in the glass pill gap; Android FAB is slightly elevated.
-        padding: EdgeInsets.only(top: isIOS ? 35 : 8),
+        padding: const EdgeInsets.only(top: 35),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: isIOS ? 54 : 52,
-              height: isIOS ? 54 : 52,
+              width: 54,
+              height: 54,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
-                border: Border.all(
-                  color: Colors.white,
-                  width: isIOS ? 4.0 : 3.0,
-                ),
+                border: Border.all(color: Colors.white, width: 4.0),
                 boxShadow: [
                   BoxShadow(
                     color: const Color(0xFF000000).withOpacity(0.2),
-                    blurRadius: isIOS ? 10 : 8,
-                    offset: const Offset(0, 4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
               child: Container(
-                width: isIOS ? 44 : 42,
-                height: isIOS ? 44 : 42,
+                width: 44,
+                height: 44,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   color: Color(0xFFF57C00),
@@ -727,7 +722,7 @@ class _EcommerceDashboardLayoutState
                 ),
               ),
             ),
-            SizedBox(height: isIOS ? 6 : 4),
+            const SizedBox(height: 6),
             Text(
               'Sell',
               style: TextStyle(
@@ -760,9 +755,26 @@ class _EcommerceDashboardLayoutState
           SystemNavigator.pop();
         }
       },
-      child: Scaffold(
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: AppBottomNavbar.isAndroid
+            ? const SystemUiOverlayStyle(
+                systemNavigationBarColor: Color(0xFF000000),
+                systemNavigationBarDividerColor: Color(0xFF000000),
+                systemNavigationBarIconBrightness: Brightness.light,
+                systemNavigationBarContrastEnforced: false,
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+              )
+            : const SystemUiOverlayStyle(
+                statusBarColor: Colors.transparent,
+                statusBarIconBrightness: Brightness.dark,
+              ),
+        child: Scaffold(
+        // Allow Sell FAB to paint slightly above the bar without a spacer.
         extendBody: true,
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppBottomNavbar.isAndroid
+            ? Colors.white
+            : Colors.transparent,
         resizeToAvoidBottomInset: false,
         // floatingActionButtonLocation:
         // FloatingActionButtonLocation.centerDocked,
@@ -771,12 +783,26 @@ class _EcommerceDashboardLayoutState
         bottomNavigationBar: Consumer(
           builder: (context, ref, child) {
             final isScrolled = ref.watch(isHomeScrolledProvider);
-            // Watch this to rebuild navbar colors
             ref.watch(selectedTabIndexProvider);
 
-            final bottomMargin = AppBottomNavbar.bottomSafeMargin(context);
-            final isIOS = AppBottomNavbar.isIOS;
+            final items = getBottomItems(
+              context: context,
+              isScrolled: isScrolled,
+            );
 
+            // Android: self-contained docked bar (Sell FAB included, flush on system nav)
+            if (AppBottomNavbar.isAndroid) {
+              return AppBottomNavbar(
+                bottomItem: items,
+                onSelect: (index) {
+                  if (index != null) onItemTapped(index);
+                },
+                onSellTap: () => _onSellTap(context),
+              );
+            }
+
+            // iOS: glass pill + separate raised Sell FAB
+            final bottomMargin = AppBottomNavbar.bottomSafeMargin(context);
             return SizedBox(
               height: AppBottomNavbar.shellHeight(context),
               width: double.infinity,
@@ -786,14 +812,11 @@ class _EcommerceDashboardLayoutState
                 children: [
                   Padding(
                     padding: EdgeInsets.only(
-                      top: isIOS ? 25.h : 18.h,
+                      top: 25.h,
                       bottom: bottomMargin,
                     ),
                     child: AppBottomNavbar(
-                      bottomItem: getBottomItems(
-                        context: context,
-                        isScrolled: isScrolled,
-                      ),
+                      bottomItem: items,
                       onSelect: (index) {
                         if (index != null) onItemTapped(index);
                       },
@@ -838,6 +861,7 @@ class _EcommerceDashboardLayoutState
             // ),
           ],
         ),
+      ),
       ),
     );
   }
