@@ -29,9 +29,9 @@ class AppBottomNavbar extends ConsumerWidget {
   static bool get isIOS => Platform.isIOS;
   static bool get isAndroid => Platform.isAndroid;
 
-  static const androidAccent = Color(0xFFE53935);
+  static const androidAccent = Color(0xFFFF8322); // same orange as iOS hover
   static const androidSellOrange = Color(0xFFF57C00);
-  static const androidInactive = Color(0xFF6B7280);
+  static const androidInactive = Color(0xFF1A1A1A);
 
   static double horizontalMargin(BuildContext context) => isIOS ? 16.w : 0;
 
@@ -469,45 +469,82 @@ class _AndroidNavItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final selectedIndex = ref.watch(selectedTabIndexProvider);
     final isSelected = index == selectedIndex;
+    // Uses activeIcon (rocket when home scrolled) — same as iOS.
     final iconPath = isSelected ? bottomItem.activeIcon : bottomItem.icon;
-    final color = isSelected
-        ? AppBottomNavbar.androidAccent
-        : AppBottomNavbar.androidInactive;
 
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => onSelect(index),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SvgPicture.asset(
-            iconPath,
-            height: 24.h,
-            width: 24.w,
-            fit: BoxFit.contain,
-            colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+          Stack(
+            alignment: Alignment.center,
+            clipBehavior: Clip.none,
+            children: [
+              // Same orange circle hover/selected background as iOS.
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+                height: 37.h,
+                width: 37.w,
+                decoration: BoxDecoration(
+                  color: isSelected
+                      ? AppBottomNavbar.androidAccent
+                      : Colors.transparent,
+                  borderRadius: BorderRadius.circular(50.r),
+                ),
+              ),
+              SizedBox(
+                height: 37.h,
+                width: 37.w,
+                child: Center(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 300),
+                    switchInCurve: Curves.easeOutBack,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, animation) {
+                      if (index == 0 && isSelected) {
+                        return SlideTransition(
+                          position: Tween<Offset>(
+                            begin: const Offset(0.0, 1.0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        );
+                      }
+                      return ScaleTransition(scale: animation, child: child);
+                    },
+                    child: SvgPicture.asset(
+                      iconPath,
+                      key: ValueKey<String>(iconPath),
+                      height: 24.h,
+                      width: 24.w,
+                      fit: BoxFit.contain,
+                      colorFilter: ColorFilter.mode(
+                        isSelected
+                            ? Colors.white
+                            : AppBottomNavbar.androidInactive,
+                        BlendMode.srcIn,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          SizedBox(height: 3.h),
+          SizedBox(height: 2.h),
           Text(
             bottomItem.name,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: AppTextStyle(context).bodyTextSmall.copyWith(
-                  fontSize: 11.sp,
+                  fontSize: 10.sp,
                   fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                  color: color,
+                  color: Colors.black,
                 ),
-          ),
-          SizedBox(height: 4.h),
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            height: 3.h,
-            width: isSelected ? 22.w : 0,
-            decoration: BoxDecoration(
-              color: AppBottomNavbar.androidAccent,
-              borderRadius: BorderRadius.circular(2.r),
-            ),
           ),
         ],
       ),
