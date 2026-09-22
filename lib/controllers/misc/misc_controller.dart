@@ -49,6 +49,8 @@ final bottomTabControllerProvider =
 final currentPageController = StateProvider<int>((ref) => 0);
 final selectedProductColorIndex = StateProvider<int?>((ref) => 0);
 final selectedProductSizeIndex = StateProvider<int>((ref) => 0);
+final productDetailsQuantityProvider = StateProvider<int>((ref) => 1);
+final productDetailsTabIndexProvider = StateProvider<int>((ref) => 0);
 final isOnboardingLastPage = StateProvider<bool>((ref) => false);
 final obscureText1 = StateProvider<bool>((ref) => true);
 final obscureText2 = StateProvider<bool>((ref) => true);

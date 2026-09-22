@@ -194,18 +194,21 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
 
   Widget _buildImageSection(bool isFavorite) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(10.w, 10.h, 10.w, 0),
+      padding: EdgeInsets.fromLTRB(8.w, 8.h, 8.w, 0),
       child: LayoutBuilder(
         builder: (context, constraints) {
           final areaWidth = constraints.maxWidth;
-          final glowSize = areaWidth * 0.72;
+          final areaHeight = constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : 148.h;
+          final glowSize = (areaWidth * 0.72).clamp(0.0, areaHeight * 0.85);
 
           return Stack(
-            clipBehavior: Clip.none,
+            clipBehavior: Clip.hardEdge,
             children: [
               Container(
-                height: 148.h,
                 width: double.infinity,
+                height: double.infinity,
                 decoration: BoxDecoration(
                   color: _imageBackground,
                   borderRadius: BorderRadius.circular(16.r),
@@ -224,7 +227,7 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
                     CachedNetworkImage(
                       imageUrl: widget.product.thumbnail,
                       width: areaWidth * 0.72,
-                      height: 108.h,
+                      height: areaHeight * 0.72,
                       fit: BoxFit.contain,
                       placeholder: (_, __) => SizedBox(
                         width: 24.w,
@@ -240,10 +243,10 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
                   ],
                 ),
               ),
-              Positioned(top: 10.h, left: 10.w, child: _buildDiscountBadge()),
+              Positioned(top: 8.h, left: 8.w, child: _buildDiscountBadge()),
               Positioned(
-                top: 10.h,
-                right: 10.w,
+                top: 8.h,
+                right: 8.w,
                 child: _buildFavoriteButton(isFavorite),
               ),
             ],
@@ -373,10 +376,10 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
           ],
         ),
         if (_savingsAmount > 0) ...[
-          Gap(6.h),
+          Gap(4.h),
           Container(
             width: double.infinity,
-            padding: EdgeInsets.symmetric(vertical: 6.h),
+            padding: EdgeInsets.symmetric(vertical: 4.h),
             decoration: BoxDecoration(
               color: _saveBadgeBg,
               borderRadius: BorderRadius.circular(8.r),
@@ -407,7 +410,7 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
         duration: const Duration(milliseconds: 120),
         child: Container(
           width: double.infinity,
-          height: 40.h,
+          height: 36.h,
           decoration: BoxDecoration(
             color: _priceRed,
             borderRadius: BorderRadius.circular(12.r),
@@ -451,64 +454,81 @@ class _ProductListingCardState extends ConsumerState<ProductListingCard> {
   Widget build(BuildContext context) {
     final isFavorite = ref.watch(favoriteProvider(widget.product.id));
 
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: Container(
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: _cardBg,
-          borderRadius: BorderRadius.circular(18.r),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.07),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasBoundedHeight = constraints.maxHeight.isFinite;
+
+        return GestureDetector(
+          onTap: widget.onTap,
+          child: Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: _cardBg,
+              borderRadius: BorderRadius.circular(18.r),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.07),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildImageSection(isFavorite),
-            Padding(
-              padding: EdgeInsets.fromLTRB(12.w, 10.h, 12.w, 12.h),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    widget.product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyle(context).bodyText.copyWith(
-                          color: _titleColor,
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13.sp,
-                          height: 1.2,
+            clipBehavior: Clip.antiAlias,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize:
+                  hasBoundedHeight ? MainAxisSize.max : MainAxisSize.min,
+              children: [
+                if (hasBoundedHeight)
+                  Expanded(child: _buildImageSection(isFavorite))
+                else
+                  SizedBox(
+                    height: 148.h,
+                    width: double.infinity,
+                    child: _buildImageSection(isFavorite),
+                  ),
+                Padding(
+                  padding: EdgeInsets.fromLTRB(10.w, 6.h, 10.w, 8.h),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        widget.product.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyle(context).bodyText.copyWith(
+                              color: _titleColor,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12.sp,
+                              height: 1.2,
+                            ),
+                      ),
+                      Gap(2.h),
+                      Text(
+                        _brandLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _muted,
+                          fontSize: 10.sp,
+                          fontWeight: FontWeight.w400,
                         ),
+                      ),
+                      Gap(4.h),
+                      _buildRatingRow(),
+                      Gap(4.h),
+                      _buildPriceSection(),
+                      Gap(6.h),
+                      _buildAddToCartButton(),
+                    ],
                   ),
-                  Gap(3.h),
-                  Text(
-                    _brandLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: _muted,
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                  Gap(6.h),
-                  _buildRatingRow(),
-                  Gap(8.h),
-                  _buildPriceSection(),
-                  Gap(10.h),
-                  _buildAddToCartButton(),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

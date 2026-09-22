@@ -402,284 +402,262 @@ class ProductImagePageView extends ConsumerStatefulWidget {
 class _ProductImagePageViewState extends ConsumerState<ProductImagePageView> {
   PageController pageController = PageController();
   late bool isFavorite;
+
   @override
   void initState() {
-    ref.refresh(currentPageController);
-    pageController.addListener(() {
-      int? newPage = pageController.page?.round();
-      if (newPage != ref.read(currentPageController)) {
-        setState(() {
-          ref.read(currentPageController.notifier).state = newPage!;
-        });
-      }
-    });
     super.initState();
     isFavorite = widget.productDetails.product.isFavorite == true;
+    // Reset shared page index immediately — home banner also uses this provider.
+    ref.read(currentPageController.notifier).state = 0;
+    pageController.addListener(() {
+      final pageCount = widget.productDetails.product.thumbnails.length;
+      if (pageCount == 0) return;
+      final newPage = pageController.page?.round();
+      if (newPage == null) return;
+      final safePage = newPage.clamp(0, pageCount - 1);
+      if (safePage != ref.read(currentPageController)) {
+        ref.read(currentPageController.notifier).state = safePage;
+      }
+    });
   }
 
+  @override
+  void dispose() {
+    pageController.dispose();
+    super.dispose();
+  }
+
+  Widget _buildActionBtn({required IconData icon, required Color color, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 40.w,
+        height: 40.w,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Icon(icon, size: 20.sp, color: color),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    // Sort the thumbnails: Images first, then others
     final sortedThumbnails = [...widget.productDetails.product.thumbnails];
     sortedThumbnails.sort((a, b) {
-      if (a.type == FileSystem.image.name && b.type != FileSystem.image.name)
-        return -1;
-      if (a.type != FileSystem.image.name && b.type == FileSystem.image.name)
-        return 1;
+      if (a.type == FileSystem.image.name && b.type != FileSystem.image.name) return -1;
+      if (a.type != FileSystem.image.name && b.type == FileSystem.image.name) return 1;
       return 0;
     });
-    return Stack(
-      alignment: Alignment.topCenter,
-      children: [
-        // Gap(110.h),
-        Padding(
-          // padding: const EdgeInsets.fromLTRB(20, 5, 20, 5),
-          padding: const EdgeInsets.fromLTRB(0, 0, 0, 0),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(15.r),
-            child: SizedBox(
-              height: 480.h,
-              width: MediaQuery.of(context).size.width,
-              child: PageView.builder(
-                controller: pageController,
-                itemCount: sortedThumbnails.length,
-                itemBuilder: (context, index) {
-                  final item = sortedThumbnails[index];
-                  final fileSystem = item.type;
 
-                  if (fileSystem == FileSystem.image.name) {
-                    return CachedNetworkImage(
-                      imageUrl: item.thumbnail ?? '',
-                      fit: BoxFit.contain,
-                    );
-                  } else if (fileSystem == FileSystem.file.name) {
-                    return VideoPlayer(
-                      videoUrl: item.url ?? '',
-                    );
-                  } else {
-                    return Container(
-                      padding: EdgeInsets.only(top: 100.h),
-                      width: double.infinity,
-                      child: IframeCard(
-                        iframeUrl: item.url ?? '',
-                      ),
-                    );
-                  }
-                },
-              ),
-              // PageView.builder(
-              //   controller: pageController,
-              //   // reverse: true,
-              //   itemCount: widget.productDetails.product.thumbnails.length,
-              //   itemBuilder: (context, index) {
-              //     final fileSystem =
-              //         widget.productDetails.product.thumbnails[index].type;
-              //     if (fileSystem == FileSystem.image.name) {
-              //       return CachedNetworkImage(
-              //         imageUrl: widget
-              //                 .productDetails.product.thumbnails[index].thumbnail ??
-              //             '',
-              //         fit: BoxFit.cover,
-              //       );
-              //     }
-              //     else if (fileSystem == FileSystem.file.name) {
-              //       return VideoPlayer(
-              //         videoUrl:
-              //             // 'https://flutter.github.io/assets-for-api-docs/assets/videos/bee.mp4'
-              //             widget.productDetails.product.thumbnails[index].url ?? '',
-              //       );
-              //     }
-              //     else {
-              //       return Container(
-              //         padding: EdgeInsets.only(top: 100.h),
-              //         width: double.infinity,
-              //         child: IframeCard(
-              //           iframeUrl:
-              //               widget.productDetails.product.thumbnails[index].url ??
-              //                   '',
-              //         ),
-              //       );
-              //     }
-              //     return null;
-              //   },
-              // ),
-            ),
-          ),
-        ),
-        // Positioned(
-        //   bottom: 16.h,
-        //   child: Container(
-        //     padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 3.h),
-        //     decoration: BoxDecoration(
-        //       borderRadius: BorderRadius.circular(8.r),
-        //       color: EcommerceAppColor.lightGray,
-        //     ),
-        //     child: Wrap(
-        //       alignment: WrapAlignment.center,
-        //       children: List.generate(
-        //         widget.productDetails.product.thumbnails.length,
-        //         (index) => AnimatedContainer(
-        //           duration: const Duration(milliseconds: 300),
-        //           margin: const EdgeInsets.symmetric(horizontal: 2),
-        //           decoration: BoxDecoration(
-        //             color:
-        //                 ref.read(currentPageController.notifier).state == index
-        //                     ? colors(context).light
-        //                     : colors(context).accentColor!.withOpacity(0.5),
-        //             borderRadius: BorderRadius.circular(30.sp),
-        //           ),
-        //           height: 8.h,
-        //           width: 8.w,
-        //         ),
-        //       ).toList(),
-        //     ),
-        //   ),
-        // ),
-        if (widget.productDetails.product.discountPrice > 0)
-         Positioned(
-          top: -19,
-          left: -10,
-          child: AnimatedSize(
-            duration: const Duration(milliseconds: 250),
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                /// 🔴 DISCOUNT TAG PNG
-                Transform.rotate(
-                  angle: 0.0, // tilt like image
-                  child: Image.asset(
-                    'assets/png/discount_logo.png',
-                    height: 75.h,
-                    fit: BoxFit.contain,
+    final rawIndex = ref.watch(currentPageController);
+    final currentIndex = sortedThumbnails.isEmpty
+        ? 0
+        : rawIndex.clamp(0, sortedThumbnails.length - 1);
+    if (rawIndex != currentIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (ref.read(currentPageController) != currentIndex) {
+          ref.read(currentPageController.notifier).state = currentIndex;
+        }
+      });
+    }
+
+    return Column(
+      children: [
+        Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.w),
+          child: Stack(
+            alignment: Alignment.topCenter,
+            children: [
+              Container(
+                height: 360.h,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF5F5F5),
+                  borderRadius: BorderRadius.circular(16.r),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(16.r),
+                  child: PageView.builder(
+                    controller: pageController,
+                    itemCount: sortedThumbnails.isEmpty
+                        ? 1
+                        : sortedThumbnails.length,
+                    itemBuilder: (context, index) {
+                      if (sortedThumbnails.isEmpty) {
+                        return const Center(
+                            child: Icon(Icons.image_not_supported_outlined));
+                      }
+                      final item = sortedThumbnails[index];
+                      final fileSystem = item.type;
+                      if (fileSystem == FileSystem.image.name) {
+                        return CachedNetworkImage(
+                          imageUrl: item.thumbnail ?? '',
+                          fit: BoxFit.contain,
+                        );
+                      } else if (fileSystem == FileSystem.file.name) {
+                        return VideoPlayer(videoUrl: item.url ?? '');
+                      } else {
+                        return Container(
+                          padding: EdgeInsets.only(top: 100.h),
+                          width: double.infinity,
+                          child: IframeCard(iframeUrl: item.url ?? ''),
+                        );
+                      }
+                    },
                   ),
                 ),
-
-                /// 🏷️ DISCOUNT TEXT
-                Transform.rotate(
-                  angle: 0.7, // SAME tilt as image
-                  child: Padding(
-                    padding: EdgeInsets.only(left: 7.w,top: 8),
+              ),
+              if (widget.productDetails.product.discountPercentage > 0)
+                Positioned(
+                  top: 14.h,
+                  left: 14.w,
+                  child: Container(
+                    padding:
+                        EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE53935),
+                      borderRadius: BorderRadius.circular(4.r),
+                    ),
                     child: Text(
-                      '${widget.productDetails.product.discountPercentage.toInt()}%',
-                      textAlign: TextAlign.center,
+                      '${widget.productDetails.product.discountPercentage.toInt()}% OFF',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 12.sp,
+                        fontSize: 11.sp,
                         fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-        Positioned(
-          top: 0,
-          right: 20,
-          child: CircleAvatar(
-            radius: 17.r,
-            backgroundColor: Colors.white,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4,),
-              child: AnimatedSize(
-                duration: const Duration(milliseconds: 250),
-                child: IconButton(
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  onPressed: () {
-                    if (ref.read(hiveServiceProvider).userIsLoggedIn()) {
-                      setState(() {
-                        isFavorite = !isFavorite;
-                      });
-                      ref
-                          .read(productControllerProvider.notifier)
-                          .favoriteProductAddRemove(
-                        productId: widget.productDetails.product.id,
-                      );
-                    } else {
-                      showDialog(
-                          context: context,
-                          builder: (_) => ConfirmationDialog(
-                            title:
-                            'You are unable to favorite products without login!',
-                            confirmButtonText: 'Login',
-                            onPressed: () {
-                              context.nav.pushNamedAndRemoveUntil(
-                                  Routes.login, (route) => false);
-                            },
-                          ));
-                    }
-                  },
-                  icon: Icon(
-                    isFavorite
-                        ? Icons.favorite
-                        : Icons.favorite_outline_rounded,
-                    size: isFavorite ? 26.sp : 25.sp,
-                    color: isFavorite
-                        ? colors(context).errorColor
-                        : colors(context).bodyTextSmallColor,
+              Positioned(
+                top: 14.h,
+                right: 14.w,
+                child: Column(
+                  children: [
+                    _buildActionBtn(
+                      icon: isFavorite
+                          ? Icons.favorite
+                          : Icons.favorite_border_rounded,
+                      color: isFavorite ? Colors.red : Colors.black,
+                      onTap: () {
+                        if (ref.read(hiveServiceProvider).userIsLoggedIn()) {
+                          setState(() => isFavorite = !isFavorite);
+                          ref
+                              .read(productControllerProvider.notifier)
+                              .favoriteProductAddRemove(
+                                productId: widget.productDetails.product.id,
+                              );
+                        } else {
+                          showDialog(
+                            context: context,
+                            builder: (_) => ConfirmationDialog(
+                              title: 'You must login to favorite products',
+                              confirmButtonText: 'Login',
+                              onPressed: () {
+                                context.nav.pushNamedAndRemoveUntil(
+                                    Routes.login, (route) => false);
+                              },
+                            ),
+                          );
+                        }
+                      },
+                    ),
+                    Gap(12.h),
+                    _buildActionBtn(
+                      icon: Icons.share_outlined,
+                      color: Colors.black,
+                      onTap: () {
+                        final websiteUrl =
+                            AppConstants.baseUrl.replaceAll("api", "products");
+                        Share.share(
+                            "Check out this product: $websiteUrl/${widget.productDetails.product.id}/details");
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Positioned(
+                bottom: 14.h,
+                right: 14.w,
+                child: Container(
+                  padding:
+                      EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.45),
+                    borderRadius: BorderRadius.circular(12.r),
+                  ),
+                  child: Text(
+                    sortedThumbnails.isEmpty
+                        ? '0/0'
+                        : '${currentIndex + 1}/${sortedThumbnails.length}',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11.sp,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
-
-        // Positioned(
-        //   top: 25,
-        //   right: 40,
-        //   child: CircleAvatar(
-        //     radius: 23.r,
-        //     backgroundColor: Colors.white,
-        //     child: Padding(
-        //       padding: const EdgeInsets.only(top: 5),
-        //       child: AnimatedSize(
-        //         duration: const Duration(milliseconds: 250),
-        //         child: IconButton(
-        //           padding: EdgeInsets.zero,
-        //           visualDensity: VisualDensity.compact,
-        //           onPressed: () {
-        //             if (ref.read(hiveServiceProvider).userIsLoggedIn()) {
-        //               setState(() {
-        //                 isFavorite = !isFavorite;
-        //               });
-        //               ref
-        //                   .read(productControllerProvider.notifier)
-        //                   .favoriteProductAddRemove(
-        //                     productId: widget.productDetails.product.id,
-        //                   );
-        //             } else {
-        //               showDialog(
-        //                   context: context,
-        //                   builder: (_) => ConfirmationDialog(
-        //                         title:
-        //                             'You are unable to favorite products without login!',
-        //                         confirmButtonText: 'Login',
-        //                         onPressed: () {
-        //                           context.nav.pushNamedAndRemoveUntil(
-        //                               Routes.login, (route) => false);
-        //                         },
-        //                       ));
-        //             }
-        //           },
-        //           icon: Icon(
-        //             isFavorite
-        //                 ? Icons.favorite
-        //                 : Icons.favorite_outline_rounded,
-        //             size: isFavorite ? 36.sp : 35.sp,
-        //             color: isFavorite
-        //                 ? colors(context).errorColor
-        //                 : colors(context).bodyTextSmallColor,
-        //           ),
-        //         ),
-        //       ),
-        //     ),
-        //   ),
-        // ),
-
+        Gap(14.h),
+        if (sortedThumbnails.isNotEmpty)
+          SizedBox(
+            height: 56.h,
+            child: ListView.separated(
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
+              scrollDirection: Axis.horizontal,
+              itemCount: sortedThumbnails.length,
+              separatorBuilder: (_, __) => Gap(12.w),
+              itemBuilder: (context, index) {
+                final item = sortedThumbnails[index];
+                final isSelected = index == currentIndex;
+                return GestureDetector(
+                  onTap: () {
+                    pageController.animateToPage(
+                      index,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.ease,
+                    );
+                  },
+                  child: Container(
+                    width: 56.h,
+                    height: 56.h,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10.r),
+                      border: Border.all(
+                        color: isSelected
+                            ? const Color(0xFFFF5722)
+                            : const Color(0xFFEEEEEE),
+                        width: 2,
+                      ),
+                      image: item.type == FileSystem.image.name
+                          ? DecorationImage(
+                              image: NetworkImage(item.thumbnail ?? ''),
+                              fit: BoxFit.contain,
+                            )
+                          : null,
+                    ),
+                    child: item.type != FileSystem.image.name
+                        ? const Icon(Icons.play_circle_outline,
+                            color: Colors.grey)
+                        : null,
+                  ),
+                );
+              },
+            ),
+          ),
       ],
     );
   }

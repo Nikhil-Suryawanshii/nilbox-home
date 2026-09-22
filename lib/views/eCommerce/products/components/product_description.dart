@@ -2,36 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'package:ready_ecommerce/components/ecommerce/confirmation_dialog.dart';
-import 'package:ready_ecommerce/config/app_color.dart';
-import 'package:ready_ecommerce/config/app_constants.dart';
-import 'package:ready_ecommerce/config/app_text_style.dart';
-import 'package:ready_ecommerce/config/theme.dart';
 import 'package:ready_ecommerce/controllers/eCommerce/product/product_controller.dart';
-import 'package:ready_ecommerce/generated/l10n.dart';
-import 'package:ready_ecommerce/models/eCommerce/cart/hive_cart_model.dart';
+import 'package:ready_ecommerce/controllers/misc/misc_controller.dart';
 import 'package:ready_ecommerce/models/eCommerce/product/product_details.dart';
-import 'package:ready_ecommerce/routes.dart';
-import 'package:ready_ecommerce/services/common/hive_service_provider.dart';
-import 'package:ready_ecommerce/utils/context_less_navigation.dart';
 import 'package:ready_ecommerce/utils/global_function.dart';
-import 'package:ready_ecommerce/views/eCommerce/home/layouts/home_view_layout.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_color_picker.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_size_picker.dart';
-import 'package:share_plus/share_plus.dart';
 
-import '../../../../components/ecommerce/increment_decrement_button.dart';
-import '../../../../controllers/common/master_controller.dart';
-import '../../../../controllers/eCommerce/cart/cart_controller.dart';
-import '../../../../controllers/misc/misc_controller.dart';
-import '../../../../models/eCommerce/cart/add_to_cart_model.dart';
+const Color _kAccent = Color(0xFFFF5722);
 
 class ProductDescription extends ConsumerStatefulWidget {
   final ProductDetails productDetails;
+  final VoidCallback? onAddToCart;
+  final VoidCallback? onBuyNow;
+  final VoidCallback? onViewReviews;
+
   const ProductDescription({
     super.key,
     required this.productDetails,
+    this.onAddToCart,
+    this.onBuyNow,
+    this.onViewReviews,
   });
 
   @override
@@ -39,607 +30,403 @@ class ProductDescription extends ConsumerStatefulWidget {
 }
 
 class _ProductDescriptionState extends ConsumerState<ProductDescription> {
-  bool isTextExpanded = false;
-  bool isFavorite = true;
-  final TextEditingController promoCodeController = TextEditingController();
-
   @override
   void initState() {
-    isFavorite = widget.productDetails.product.isFavorite;
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(productDetailsQuantityProvider.notifier).state = 1;
+    });
   }
 
-  bool checkMultivendor() {
-    return ref
-        .read(masterControllerProvider.notifier)
-        .materModel
-        .data
-        .isMultiVendor;
+  void _incrementQuantity() {
+    final maxQty = widget.productDetails.product.quantity;
+    final current = ref.read(productDetailsQuantityProvider);
+    if (current < maxQty) {
+      ref.read(productDetailsQuantityProvider.notifier).state = current + 1;
+    }
   }
 
-  void calculateCartSummery() {
-    debugPrint('calculateCartSummery');
-
-    ref.read(shopIdsProvider.notifier).addAllShopIds();
-    debugPrint(
-        "sopids: ${ref.read(shopIdsProvider).toList().toString()} ${promoCodeController.text}}");
-    ref.read(cartSummeryController.notifier).calculateCartSummery(
-          couponCode: promoCodeController.text,
-          shopIds: ref.read(shopIdsProvider).toList(),
-          isBuyNow: false,
-        );
-  }
-
-  Future<void> _updateQuantity({
-    required WidgetRef ref,
-    required bool isIncrement,
-  }) async {
-    final cartState = ref.read(cartController);
-
-    /// SAFETY: cart empty
-    if (cartState.cartItems.isEmpty ||
-        cartState.cartItems.first.cartProduct.isEmpty) {
-      debugPrint('Cart is empty');
-      return;
+  void _decrementQuantity() {
+    final current = ref.read(productDetailsQuantityProvider);
+    if (current > 1) {
+      ref.read(productDetailsQuantityProvider.notifier).state = current - 1;
     }
-
-    final productId = cartState.cartItems.first.cartProduct.first.id;
-
-    /// Multivendor handling
-    if (checkMultivendor()) {
-      if (ref.read(shopIdsProvider).isNotEmpty) {
-        ref.read(shopIdsProvider);
-        ref.read(cartSummeryController.notifier);
-      }
-    }
-
-    /// Increment / Decrement
-    if (isIncrement) {
-      await ref.read(cartController.notifier).increment(productId: productId);
-    } else {
-      await ref.read(cartController.notifier).decrement(productId: productId);
-    }
-
-    calculateCartSummery();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 500),
-      padding: EdgeInsets.symmetric(horizontal: 0.w, vertical: 0.h),
+    final product = widget.productDetails.product;
+    final quantity = ref.watch(productDetailsQuantityProvider);
+    final colorPrice = ref.watch(selectedColorPriceProvider);
+    final sizePrice = ref.watch(selectedSizePriceProvider);
+    final bool inStock = product.quantity > 0;
+    final bool isDisabled = !inStock;
+    final bool showUrgency = product.quantity > 0 && product.quantity <= 25;
+
+    final basePrice =
+        product.discountPrice > 0 ? product.discountPrice : product.price;
+    final displayPrice = basePrice + colorPrice + sizePrice;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
       width: double.infinity,
-      color: Colors.transparent,
+      color: Colors.white,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-
-
-        // Row(
-        //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        //   crossAxisAlignment: CrossAxisAlignment.center,
-        //     children: [
-        //       Text(
-        //         widget.productDetails.product.name
-        //             .split(' ')
-        //             .map((word) => word.isNotEmpty
-        //             ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-        //             : '')
-        //             .join(' '),
-        //         maxLines: 2,
-        //         overflow: TextOverflow.ellipsis,
-        //         style: AppTextStyle(context)
-        //             .bodyText
-        //             .copyWith(fontWeight: FontWeight.w700,
-        //             // fontSize: 15
-        //             fontSize: 23
-        //         ),
-        //       ),
-        //       // Text(
-        //       //   widget.productDetails.product.brand ?? '',
-        //       //   style: AppTextStyle(context).bodyTextSmall.copyWith(
-        //       //         color: colors(context).primaryColor,
-        //       //         fontWeight: FontWeight.w700,
-        //       //     overflow: TextOverflow.ellipsis
-        //       //       ),
-        //       // ),
-        //       // Gap(50.w),
-        //       // Spacer(),
-        //       Flexible(
-        //         child: Visibility(
-        //           visible: widget.productDetails.product.colors.isNotEmpty,
-        //           child: ProductColorPicker(productDetails: widget.productDetails),
-        //         ),
-        //       ),
-        //       ///-----------old design-------------------------
-        //       // _buildPriceAndAddToCart(context: context),
-        //       ///---------------------------------------------
-        //       Gap(10.w),
-        //     ],
-        //   ),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center, // Align items vertically center
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 1. PRODUCT NAME (Left Side)
               Expanded(
-                flex: 3, // Give text more space (approx 60-70%)
                 child: Text(
-                  widget.productDetails.product.name
-                      .split(' ')
-                      .map((word) => word.isNotEmpty
-                      ? '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}'
-                      : '')
-                      .join(' '),
+                  product.name,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: AppTextStyle(context).bodyText.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 23.sp, // Use .sp for responsive font size
+                  style: TextStyle(
+                    fontSize: 22.sp,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
                   ),
                 ),
               ),
-
-              // Gap(10.w), // Space between Name and Colors
-
-              // 2. COLOR PICKER (Right Side)
-              // Only show if colors exist
-              if (widget.productDetails.product.colors.isNotEmpty)
-                Expanded(
-                  flex: 2, // Give color picker approx 30-40% space
-                  child: Align(
-                    alignment: Alignment.centerRight, // Align list to the right
-                    child: ProductColorPicker(productDetails: widget.productDetails),
+              Gap(8.w),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+                decoration: BoxDecoration(
+                  color: inStock
+                      ? const Color(0xFFE8F5E9)
+                      : const Color(0xFFFFEBEE),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Text(
+                  inStock ? 'In Stock' : 'Out of Stock',
+                  style: TextStyle(
+                    color: inStock
+                        ? const Color(0xFF2E7D32)
+                        : const Color(0xFFC62828),
+                    fontWeight: FontWeight.w600,
+                    fontSize: 11.sp,
                   ),
                 ),
-            ],
-          ),
-          // Gap(5.h),
-
-          // Gap(5.h),
-          // AnimatedSize(
-          //   duration: const Duration(milliseconds: 500),
-          //   child: isTextExpanded
-          //       ? Text(
-          //           widget.productDetails.product.shortDescription,
-          //           maxLines: 3,
-          //           style: AppTextStyle(context)
-          //               .bodyTextSmall
-          //               .copyWith(fontSize: 12.sp,),
-          //         )
-          //       : Text(
-          //           widget.productDetails.product.shortDescription,
-          //           style: AppTextStyle(context)
-          //               .bodyTextSmall
-          //               .copyWith(fontSize: 13.sp),
-          //           maxLines: 1,
-          //           overflow: TextOverflow.ellipsis,
-          //         ),
-          // ),
-          // Gap(5.h),
-          // GestureDetector(
-          //   onTap: () {
-          //     setState(() {
-          //       isTextExpanded = !isTextExpanded;
-          //     });
-          //   },
-          //   child: Text(
-          //     isTextExpanded ? S.of(context).readLess : S.of(context).readMore,
-          //     style: AppTextStyle(context).bodyTextSmall.copyWith(
-          //           color: colors(context).primaryColor,
-          //           decoration: TextDecoration.underline,
-          //           decorationColor: colors(context).primaryColor,
-          //         ),
-          //   ),
-          // ),
-          Gap(15.h),
-          ///-------------old design--------------
-          // Visibility(
-          //   visible: widget.productDetails.product.colors.isNotEmpty,
-          //   child: ProductColorPicker(productDetails: widget.productDetails),
-          // ),
-          ///------------------------------------------------
-          Row(
-            children: [
-              SizedBox(
-                width: 170,
-                child: widget.productDetails.product.quantity == 0 ?Text(
-                  "Out of stock",
-                  style:
-                  TextStyle(color: EcommerceAppColor.red, fontSize: 12.sp),
-                ):Text(
-                  // "In stock (${widget.productDetails.product.quantity ?? 0} left)",
-                  "✅ Available in Stock",
-                  style:
-                  TextStyle(color: EcommerceAppColor.green, fontSize: 12.sp),
-                ),
               ),
-              _buildReviewAndSoldCount(context: context),
             ],
           ),
-          Gap(15.h),
+          Gap(6.h),
           Text(
-            'Size',
-            style: AppTextStyle(context)
-                .bodyText
-                .copyWith(fontWeight: FontWeight.w700,
-                // fontSize: 15
-                fontSize: 18
+            product.shortDescription.isNotEmpty
+                ? product.shortDescription
+                : 'Stay connected. Stay active. Stay ahead.',
+            style: TextStyle(
+              fontSize: 14.sp,
+              color: Colors.grey.shade500,
             ),
           ),
-          Gap(10.h),
-          Visibility(
-            visible: widget.productDetails.product.productSizeList.isNotEmpty,
-            child: ProductSizePicker(productDetails: widget.productDetails),
+          Gap(12.h),
+          Row(
+            children: [
+              ...List.generate(5, (index) {
+                return Icon(
+                  index < product.rating.floor()
+                      ? Icons.star_rounded
+                      : (index < product.rating
+                          ? Icons.star_half_rounded
+                          : Icons.star_border_rounded),
+                  color: _kAccent,
+                  size: 18.sp,
+                );
+              }),
+              Gap(6.w),
+              Text(
+                '${product.rating}',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14.sp,
+                  color: Colors.black,
+                ),
+              ),
+              Gap(4.w),
+              Text(
+                '(${product.totalReviews} reviews)',
+                style: TextStyle(
+                  color: Colors.grey.shade500,
+                  fontSize: 13.sp,
+                ),
+              ),
+              const Spacer(),
+              InkWell(
+                onTap: () {
+                  ref.read(productDetailsTabIndexProvider.notifier).state = 2;
+                  widget.onViewReviews?.call();
+                },
+                child: Text(
+                  'View Reviews >',
+                  style: TextStyle(
+                    color: _kAccent,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13.sp,
+                  ),
+                ),
+              ),
+            ],
           ),
-          ///-------old design-------------
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //   crossAxisAlignment: CrossAxisAlignment.center, // Center vertically
-          //   children: [
-          //     // FIX: Wrapped in Expanded so Size Picker doesn't push Button off screen
-          //     Expanded(
-          //       child: widget.productDetails.product.quantity == 0 ?Text(
-          //         "Out of stock",
-          //         style:
-          //         TextStyle(color: EcommerceAppColor.red, fontSize: 12.sp),
-          //       ):Text(
-          //         "In stock (${widget.productDetails.product.quantity ?? 0} left)",
-          //         style:
-          //         TextStyle(color: EcommerceAppColor.green, fontSize: 12.sp),
-          //       ),
-          //     ),
-          //
-          //     // Add gap only if sizes are present
-          //     // if(widget.productDetails.product.productSizeList.isNotEmpty) Gap(10.w),
-          //
-          //     // Giant Cart Button
-          //     // GestureDetector(
-          //     //   onTap: widget.productDetails.product.quantity == 0
-          //     //       ? null
-          //     //       : () => onTapCart(widget.productDetails, false),
-          //     //   child: Container(
-          //     //     width: 60.w, // Adjusted size slightly (75w might be too huge)
-          //     //     height: 60.w,
-          //     //     decoration: BoxDecoration(
-          //     //       shape: BoxShape.circle,
-          //     //       gradient: LinearGradient(
-          //     //         begin: Alignment.topCenter,
-          //     //         end: Alignment.bottomCenter,
-          //     //         colors: widget.productDetails.product.quantity == 0
-          //     //             ? [Colors.grey.shade400, Colors.grey.shade500]
-          //     //             : [const Color(0xFFFFB800), const Color(0xFFFF8C00)],
-          //     //       ),
-          //     //       boxShadow: [
-          //     //         BoxShadow(
-          //     //           color: widget.productDetails.product.quantity == 0
-          //     //               ? Colors.grey.withOpacity(0.3)
-          //     //               : const Color(0xFFFF8C00).withOpacity(0.4),
-          //     //           blurRadius: 15, // Softened shadow
-          //     //           offset: const Offset(0, 8),
-          //     //         ),
-          //     //       ],
-          //     //     ),
-          //     //     padding: const EdgeInsets.all(8),
-          //     //     child: Column(
-          //     //       mainAxisAlignment: MainAxisAlignment.center,
-          //     //       children: [
-          //     //         Icon(
-          //     //           Icons.shopping_cart_outlined,
-          //     //           color: Colors.white,
-          //     //           size: 20.sp,
-          //     //         ),
-          //     //         Text(
-          //     //           S.of(context).addToCart,
-          //     //           style: TextStyle(
-          //     //             color: Colors.white,
-          //     //             fontSize: 7.sp, // Smaller text to fit circle
-          //     //             fontWeight: FontWeight.w600,
-          //     //           ),
-          //     //           textAlign: TextAlign.center,
-          //     //           maxLines: 1,
-          //     //           overflow: TextOverflow.visible,
-          //     //         ),
-          //     //       ],
-          //     //     ),
-          //     //   ),
-          //     // ),
-          //   ],
-          // ),
-          ///---------------------------
-          Gap(5.h),
-          // Gap(10.h),
-          // _buildReviewAndSoldCount(context: context),
-          // Gap(5.h),
-          // _buildPriceAndAddToCart(context: context),
-          ///
-
-          // Gap(10.h),
-          widget.productDetails.product.runningFlashSale != null
-              ? DealOfTheDayWidget(
-                  showViewMore: false,
-                )
-              : const SizedBox(),
+          Gap(16.h),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                GlobalFunction.price(
+                  ref: ref,
+                  price: displayPrice.toString(),
+                ),
+                style: TextStyle(
+                  fontSize: 28.sp,
+                  fontWeight: FontWeight.bold,
+                  color: _kAccent,
+                ),
+              ),
+              Gap(8.w),
+              if (product.discountPrice > 0)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 5.h),
+                  child: Text(
+                    GlobalFunction.price(
+                      ref: ref,
+                      price: product.price.toString(),
+                    ),
+                    style: TextStyle(
+                      fontSize: 16.sp,
+                      color: Colors.grey.shade500,
+                      decoration: TextDecoration.lineThrough,
+                    ),
+                  ),
+                ),
+              Gap(10.w),
+              if (product.discountPercentage > 0)
+                Padding(
+                  padding: EdgeInsets.only(bottom: 6.h),
+                  child: Text(
+                    '${product.discountPercentage.toInt()}% OFF',
+                    style: TextStyle(
+                      color: const Color(0xFFE53935),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 13.sp,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (showUrgency) ...[
+            Gap(14.h),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.symmetric(vertical: 12.h, horizontal: 14.w),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFFF3E0),
+                borderRadius: BorderRadius.circular(10.r),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.local_fire_department,
+                      color: _kAccent, size: 20.sp),
+                  Gap(8.w),
+                  Expanded(
+                    child: Text(
+                      'Almost sold out! (${product.quantity} left in stock, buy now!)',
+                      style: TextStyle(
+                        color: _kAccent,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+          Gap(20.h),
+          if (product.colors.isNotEmpty) ...[
+            ProductColorPicker(productDetails: widget.productDetails),
+            Gap(18.h),
+          ],
+          if (product.productSizeList.isNotEmpty) ...[
+            ProductSizePicker(productDetails: widget.productDetails),
+            Gap(18.h),
+          ],
+          Row(
+            children: [
+              Text(
+                'Quantity',
+                style: TextStyle(
+                  fontSize: 16.sp,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              Gap(16.w),
+              Container(
+                height: 40.h,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.black12),
+                  borderRadius: BorderRadius.circular(20.r),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    InkWell(
+                      borderRadius: BorderRadius.only(
+                        topLeft: Radius.circular(20.r),
+                        bottomLeft: Radius.circular(20.r),
+                      ),
+                      onTap: isDisabled ? null : _decrementQuantity,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Icon(Icons.remove,
+                            size: 20.sp, color: Colors.black87),
+                      ),
+                    ),
+                    Container(
+                      constraints: BoxConstraints(minWidth: 30.w),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '$quantity',
+                        style: TextStyle(
+                          fontSize: 16.sp,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    InkWell(
+                      borderRadius: BorderRadius.only(
+                        topRight: Radius.circular(20.r),
+                        bottomRight: Radius.circular(20.r),
+                      ),
+                      onTap: isDisabled ? null : _incrementQuantity,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: Icon(Icons.add,
+                            size: 20.sp, color: Colors.black87),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Gap(20.h),
+          Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 48.h,
+                  child: OutlinedButton.icon(
+                    onPressed: isDisabled ? null : widget.onAddToCart,
+                    icon: Icon(Icons.shopping_cart_outlined,
+                        color: isDisabled ? Colors.grey : _kAccent, size: 20.sp),
+                    label: Text(
+                      'Add to Cart',
+                      style: TextStyle(
+                        color: isDisabled ? Colors.grey : _kAccent,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(
+                        color: isDisabled ? Colors.grey.shade300 : _kAccent,
+                        width: 1.5,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Gap(12.w),
+              Expanded(
+                child: SizedBox(
+                  height: 48.h,
+                  child: ElevatedButton(
+                    onPressed: isDisabled ? null : widget.onBuyNow,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kAccent,
+                      disabledBackgroundColor: Colors.grey.shade300,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                      ),
+                    ),
+                    child: Text(
+                      'Buy Now',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14.sp,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          Gap(24.h),
+          Divider(color: Colors.grey.shade200, thickness: 1),
+          Gap(16.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _buildFeatureIcon(
+                Icons.local_shipping_outlined,
+                'Free Delivery',
+                product.shop.estimatedDeliveryTime.isNotEmpty
+                    ? product.shop.estimatedDeliveryTime
+                    : '3-5 days',
+              ),
+              Container(height: 40.h, width: 1, color: Colors.grey.shade200),
+              _buildFeatureIcon(
+                  Icons.verified_outlined, '1 Year Warranty', 'Official Brand'),
+              Container(height: 40.h, width: 1, color: Colors.grey.shade200),
+              _buildFeatureIcon(Icons.assignment_return_outlined,
+                  '7 Days Return', 'Easy Returns'),
+              Container(height: 40.h, width: 1, color: Colors.grey.shade200),
+              _buildFeatureIcon(
+                  Icons.support_agent_outlined, '24/7 Support', "We're here"),
+            ],
+          ),
+          Gap(12.h),
         ],
       ),
     );
   }
 
-  void onTapCart(ProductDetails productDetails, bool isBuyNow) async {
-    final AddToCartModel addToCartModel = AddToCartModel(
-        productId: productDetails.product.id,
-        quantity: 1,
-        size: productDetails.product.productSizeList.isNotEmpty
-            ? productDetails
-                .product.productSizeList[ref.read(selectedProductSizeIndex)].id
-            : null,
-        color: productDetails.product.colors.isNotEmpty
-            ? productDetails
-                .product.colors[ref.read(selectedProductColorIndex)!].id
-            : null,
-        isBuyNow: isBuyNow);
-    if (!ref.read(hiveServiceProvider).userIsLoggedIn()) {
-      showTheWarningDialog();
-    } else {
-      await ref
-          .read(cartController.notifier)
-          .addToCart(addToCartModel: addToCartModel);
-
-      if (isBuyNow) {
-        context.nav.pushNamed(
-            Routes.getMyCartViewRouteName(
-              AppConstants.appServiceName,
+  Widget _buildFeatureIcon(IconData icon, String title, String subtitle) {
+    return Expanded(
+      child: Column(
+        children: [
+          Icon(icon, size: 26.sp, color: Colors.black87),
+          Gap(6.h),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 10.sp,
+              fontWeight: FontWeight.w600,
+              color: Colors.black87,
             ),
-            arguments: [false, isBuyNow]);
-      }
-    }
-  }
-  showTheWarningDialog() {
-    showDialog(
-      barrierColor: colors(GlobalFunction.navigatorKey.currentContext!)
-          .accentColor!
-          .withOpacity(0.8),
-      context: GlobalFunction.navigatorKey.currentContext!,
-      builder: (_) => ConfirmationDialog(
-        title: S.of(context).youAreNotLoggedIn,
-        confirmButtonText:
-            S.of(GlobalFunction.navigatorKey.currentContext!).login,
-        onPressed: () {
-          GlobalFunction.navigatorKey.currentContext!.nav
-              .pushNamedAndRemoveUntil(Routes.login, (route) => false);
-        },
+          ),
+          Gap(2.h),
+          Text(
+            subtitle,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 9.sp,
+              color: Colors.grey.shade500,
+            ),
+          ),
+        ],
       ),
     );
-  }
-
-  Widget _buildReviewAndSoldCount({required BuildContext context}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
-          children: [
-            Icon(
-              Icons.star_rounded,
-              size: 16.sp,
-              // color: EcommerceAppColor.carrotOrange,
-              color: Color(0xffFFFB00),
-            ),
-            Text(
-              widget.productDetails.product.rating.toString(),
-              style: AppTextStyle(context).bodyText.copyWith(
-                    fontWeight: FontWeight.w700,
-                fontSize: 12
-                  ),
-            ),
-            Gap(5.w),
-            Text(
-              '(${widget.productDetails.product.totalReviews} Reviews)',
-              style: AppTextStyle(context).bodyText.copyWith(
-                  fontWeight: FontWeight.w500,
-    fontSize: 12,
-                  color: colors(context).bodyTextSmallColor),
-            ),
-            // Gap(14.w),
-            // CircleAvatar(
-            //     radius: 3.r,
-            //     backgroundColor: EcommerceAppColor.lightGray.withOpacity(0.5)),
-            // Gap(14.w),
-            // Text(
-            //   '${widget.productDetails.product.totalSold} Sold',
-            //   style: AppTextStyle(context).bodyText.copyWith(
-            //         fontWeight: FontWeight.w500,
-            //         color: colors(context).bodyTextSmallColor,
-            //       ),
-            // ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildPriceAndAddToCart({required BuildContext context}) {
-    return ValueListenableBuilder<Box<HiveCartModel>>(
-        valueListenable:
-            Hive.box<HiveCartModel>(AppConstants.cartModelBox).listenable(),
-        builder: (context, cartBox, _) {
-          // bool inCart = false;
-          // late int productQuantity;
-          // int cartIndex = -1;
-          final cartItems = cartBox.values.toList();
-          for (int i = 0; i < cartItems.length; i++) {
-            final cartProduct = cartItems[i];
-            if (cartProduct.productId == widget.productDetails.product.id) {
-              // inCart = true;
-              // productQuantity = cartProduct.productsQTY;
-              // cartIndex = i;
-              break;
-            }
-          }
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.productDetails.product.discountPrice > 0)
-                Padding(
-                  padding: EdgeInsets.only(left: 0.w),
-                  child: Text(
-                    GlobalFunction.price(
-                      ref: ref,
-                      price: widget.productDetails.product.price.toString(),
-                    ),
-                    style: AppTextStyle(context).bodyText.copyWith(
-                          fontSize: 15.sp,
-                          color: EcommerceAppColor.black,
-                          decoration: TextDecoration.lineThrough,
-                          decorationColor: EcommerceAppColor.lightGray,
-                        ),
-                  ),
-                ),
-              Gap(2.h),
-              Text(
-                GlobalFunction.price(
-                  ref: ref,
-                  price: ((widget.productDetails.product.discountPrice > 0
-                              ? widget.productDetails.product.discountPrice
-                              : widget.productDetails.product.price) +
-                          ref.watch(selectedColorPriceProvider) +
-                          ref.watch(selectedSizePriceProvider))
-                      .toString(),
-                ),
-                style: AppTextStyle(context)
-                    .bodyText
-                    .copyWith(fontWeight: FontWeight.bold, fontSize: 17.sp),
-              ),
-            ],
-          );
-
-          // Row(
-          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          // children: [
-          //   Column(
-          // children: [
-          //   if (widget.productDetails.product.discountPrice > 0) ...[
-          //     Text(
-          //       GlobalFunction.price(
-          //         ref: ref,
-          //         price: (widget.productDetails.product.discountPrice +
-          //                 ref.watch(selectedColorPriceProvider) +
-          //                 ref.watch(selectedSizePriceProvider))
-          //             .toString(),
-          //       ),
-          //       style: AppTextStyle(context)
-          //           .bodyText
-          //           .copyWith(fontWeight: FontWeight.bold, fontSize: 15.sp),
-          //     ),
-          //   ] else ...[
-          //     Text(
-          //       GlobalFunction.price(
-          //         ref: ref,
-          //         price: (widget.productDetails.product.price +
-          //                 ref.watch(selectedColorPriceProvider) +
-          //                 ref.watch(selectedSizePriceProvider))
-          //             .toString(),
-          //       ),
-          //       style: AppTextStyle(context)
-          //           .bodyText
-          //           .copyWith(fontWeight: FontWeight.bold, fontSize: 15.sp),
-          //     ),
-          //   ],
-          //   Gap(5.w),
-          //   Visibility(
-          //     visible: widget.productDetails.product.discountPrice > 0,
-          //     child: Text(
-          //       GlobalFunction.price(
-          //         ref: ref,
-          //         price: widget.productDetails.product.price.toString(),
-          //       ),
-          //       style: AppTextStyle(context).bodyText.copyWith(
-          //             fontSize: 11.sp,
-          //             color: EcommerceAppColor.lightGray,
-          //             decoration: TextDecoration.lineThrough,
-          //             decorationColor: EcommerceAppColor.lightGray,
-          //           ),
-          //     ),
-          //   ),
-          // Gap(10.w),
-          // Visibility(
-          //   visible: widget.productDetails.product.discountPrice > 0,
-          //   child: Container(
-          //     padding:
-          //         EdgeInsets.symmetric(horizontal: 5.w, vertical: 2.h),
-          //     decoration: BoxDecoration(
-          //       borderRadius: BorderRadius.circular(5.r),
-          //       color: colors(context).errorColor,
-          //     ),
-          //     child: Center(
-          //       child: Text(
-          //         '-${widget.productDetails.product.discountPercentage} %',
-          //         style: AppTextStyle(context).bodyTextSmall.copyWith(
-          //               color: colors(context).light,
-          //               fontWeight: FontWeight.w700,
-          //             ),
-          //       ),
-          //     ),
-          //   ),
-          // )
-          //   ],
-          // );
-
-          // if (inCart) ...[
-          //   IncrementDecrementButton(
-          //     productQuantity: productQuantity,
-          //     increment: () {
-          //       ref.read(cartController.notifier).incrementProductQuantity(
-          //             productId: widget.productDetails.product.id,
-          //             cartBox: cartBox,
-          //             index: cartIndex,
-          // //           );
-          // //     },
-          //     decrement: () {
-          //       ref.read(cartController.notifier).decrementProductQuantity(
-          //             productId: widget.productDetails.product.id,
-          //             cartBox: cartBox,
-          //             index: cartIndex,
-          //           );
-          //     },
-          //   )
-          // ] else ...{
-          //   IncrementButton(
-          //     onTap: () async {
-          //       HiveCartModel cartItem = HiveCartModel(
-          //         shopId: widget.productDetails.product.shop.id,
-          //         shopLogo: widget.productDetails.product.shop.logo,
-          //         deliveryCharge:
-          //             widget.productDetails.product.shop.deliveryCharge,
-          //         shopName: widget.productDetails.product.shop.name,
-          //         review: 4.7,
-          //         productId: widget.productDetails.product.id,
-          //         productLogo: widget.productDetails.product.thumbnails.first.thumbnail,
-          //         title: widget.productDetails.product.name,
-          //         price: GlobalFunction.getPrice(
-          //           currentPrice: widget.productDetails.product.price,
-          //           discountPrice:
-          //               widget.productDetails.product.discountPrice,
-          //         ),
-          //         currentPrice: widget.productDetails.product.price,
-          //         discountPrice:
-          //             widget.productDetails.product.discountPrice,
-          //         color: widget.productDetails.product.colors.isNotEmpty &&
-          //                 ref.read(selectedProductColorIndex) != null
-          //             ? widget.productDetails.product
-          //                 .colors[ref.read(selectedProductColorIndex)!].name
-          //                 .toLowerCase()
-          //             : '',
-          //         productsQTY: 1,
-          //         size: '',
-          //         unit: '',
-          //       );
-          //       await cartBox.add(cartItem);
-          //     },
-          //   )
-          // },
-          // ],
-          // );
-        });
   }
 }

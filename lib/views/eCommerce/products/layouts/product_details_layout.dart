@@ -26,6 +26,7 @@ import 'package:ready_ecommerce/utils/global_function.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_color_picker.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_description.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_details_and_review.dart';
+import 'package:ready_ecommerce/views/eCommerce/products/components/product_details_tabs_section.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_image_page_view.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/product_size_picker.dart';
 import 'package:ready_ecommerce/views/eCommerce/products/components/shop_info.dart';
@@ -2555,6 +2556,23 @@ class _EcommerceProductDetailsLayoutState
             isFavorite = details.product.isFavorite;
           });
         }
+
+        final previousId = previous?.asData?.value.product.id;
+        final isNewProduct = previousId != details.product.id;
+        if (!isNewProduct) return;
+
+        ref.read(currentPageController.notifier).state = 0;
+        ref.read(productDetailsQuantityProvider.notifier).state = 1;
+        ref.read(productDetailsTabIndexProvider.notifier).state = 0;
+        final colorCount = details.product.colors.length;
+        ref.read(selectedProductColorIndex.notifier).state =
+            colorCount > 0 ? 0 : null;
+        ref.read(selectedColorPriceProvider.notifier).state =
+            colorCount > 0 ? details.product.colors[0].price : 0;
+        final sizeCount = details.product.productSizeList.length;
+        ref.read(selectedProductSizeIndex.notifier).state = 0;
+        ref.read(selectedSizePriceProvider.notifier).state =
+            sizeCount > 0 ? details.product.productSizeList[0].price : 0;
       });
     });
     return PopScope(
@@ -2562,6 +2580,11 @@ class _EcommerceProductDetailsLayoutState
       onPopInvokedWithResult: (didpop, result) {
         ref.invalidate(selectedSizePriceProvider);
         ref.invalidate(selectedColorPriceProvider);
+        ref.invalidate(productDetailsQuantityProvider);
+        ref.invalidate(productDetailsTabIndexProvider);
+        ref.invalidate(currentPageController);
+        ref.invalidate(selectedProductColorIndex);
+        ref.invalidate(selectedProductSizeIndex);
       },
       child: LoadingWrapperWidget(
         isLoading: ref.watch(cartController).isLoading,
@@ -2580,451 +2603,59 @@ class _EcommerceProductDetailsLayoutState
                 data: (productDetails) =>
                     _buildBottomActionSection(context, productDetails),
               ),
-          backgroundColor: const Color(0xffF6F6F6),
+          backgroundColor: Colors.white,
           body: ref
               .watch(productDetailsControllerProvider(widget.productId))
               .when(
-                data: (productDetails) => NestedScrollView(
-                  headerSliverBuilder: (context, innerBoxIsScrolled) {
-                    return [
-                      SliverAppBar(
-                        pinned: true, // 🔥 stays visible
-                        floating: false,
-                        snap: false,
-                        elevation: innerBoxIsScrolled ? 4 : 0,
-                        // backgroundColor: Colors.white,
-                        backgroundColor: const Color(0xffF6F6F6),
-                        automaticallyImplyLeading: false,
-                        toolbarHeight: 45.h,
-
-                        flexibleSpace: SafeArea(
-                          bottom: false,
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 8.h),
-                            child: _buildAppBar(
-                              context: context,
-                              productDetails: productDetails,
-                            ),
-                          ),
+                data: (productDetails) => Column(
+                  children: [
+                    SafeArea(
+                      bottom: false,
+                      child: SizedBox(
+                        height: 52.h,
+                        child: _buildAppBar(
+                          context: context,
+                          productDetails: productDetails,
                         ),
                       ),
-                    ];
-                  },
-                  body: AnimationLimiter(
-                    child: ListView(
-                      padding: EdgeInsets.zero,
-                      // mainAxisAlignment: MainAxisAlignment.center,
-                      // crossAxisAlignment: CrossAxisAlignment.center,
-                      children: AnimationConfiguration.toStaggeredList(
-                        duration: const Duration(milliseconds: 500),
-                        childAnimationBuilder: (widget) => SlideAnimation(
-                            verticalOffset: 50.h,
-                            child: FadeInAnimation(
-                              child: widget,
-                            )),
-                        children: [
-                          Gap(5.h),
-                          Divider(
-                            color: Color(0xffD9D9D9),
-                          ),
-                          Gap(5.h),
-                          ProductImagePageView(
-                              productDetails: productDetails),
-                          Gap(10.h),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 2.w, vertical: 3.h),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  color: EcommerceAppColor.lightGray,
-                                ),
-
-                                child: Wrap(
-                                  alignment: WrapAlignment.center,
-                                  children: List.generate(
-                                    productDetails.product.thumbnails.length,
-                                        (index) => AnimatedContainer(
-                                      duration: const Duration(milliseconds: 300),
-                                      margin: const EdgeInsets.symmetric(horizontal: 2),
-                                      decoration: BoxDecoration(
-                                        color:
-                                        ref.read(currentPageController.notifier).state == index
-                                            ? colors(context).light
-                                            : colors(context).accentColor!.withOpacity(0.5),
-                                        borderRadius: BorderRadius.circular(30.sp),
-                                      ),
-                                      height: 8.h,
-                                      width: 8.w,
-                                    ),
-                                  ).toList(),
-                                ),
-                              ),
-                              Gap(10.h),
-                              /// 🔥 ALMOST SOLD OUT PILL
-                              Container(
-                                padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(30.r),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.08),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Text("🔥"),
-                                    Gap(6.w),
-                                    Text(
-                                      "Almost sold out! (${productDetails.product.quantity ?? 0} left In stock, buy now! )",
-                                      style: TextStyle(
-                                          color: EcommerceAppColor.black,
-                                          fontSize: 12.sp),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Gap(15.h),
-                              Text(
-                                "Calvin Klein Ls Jacquard 3 Sherpa Erkek Sweatshirt",
-                                style: TextStyle(
-                                    color: EcommerceAppColor.black,
-                                    fontSize: 12.sp),
-                              ),
-                              Gap(15.h),
-                              /// 👤 SELLER + ACTION BAR
-                              Padding(
-                                padding: const EdgeInsets.symmetric(horizontal: 15),
-                                child: Container(
-                                  height: 54.h,
-                                  // width: 240,
-                                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(10.r),
-                                    border: Border.all(color: Colors.white),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      /// AVATAR
-                                      CircleAvatar(
-                                        radius: 20.r,
-                                        backgroundImage: NetworkImage(
-                                          productDetails.product.shop.logo,
-                                        ),
-                                      ),
-
-                                      Gap(10.w),
-
-                                      /// SELLER NAME
-                                      Expanded(
-                                        child: Text(
-                                          productDetails.product.shop.name,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: TextStyle(
-                                            fontSize: 14.sp,
-                                            fontWeight: FontWeight.w600,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ),
-
-                                      Gap(16.w),
-
-                                      /// 💬 CHAT BUTTON
-                                      InkWell(
-                                        borderRadius: BorderRadius.circular(10.r),
-                                        onTap: () async {
-                                          if (ref
-                                              .read(hiveServiceProvider)
-                                              .userIsLoggedIn()) {
-                                            final saveUser = await ref
-                                                .read(hiveServiceProvider)
-                                                .getUserInfo();
-
-                                            final shop = Shop(
-                                              id: productDetails.product.shop.id,
-                                              name: productDetails
-                                                  .product.shop.name,
-                                              logo: productDetails
-                                                  .product.shop.logo,
-                                            );
-
-                                            ref
-                                                .read(
-                                                storeMessageControllerProvider
-                                                    .notifier)
-                                                .storeMessage(
-                                              shopId: productDetails
-                                                  .product.shop.id,
-                                              userId: saveUser!.id!,
-                                              productId:
-                                              productDetails.product.id,
-                                            );
-
-                                            context.nav.pushNamed(
-                                              Routes.getChatViewRouteName(
-                                                  AppConstants.appServiceName),
-                                              arguments: shop,
-                                            );
-                                          } else {
-                                            showDialog(
-                                              context: context,
-                                              builder: (_) => ConfirmationDialog(
-                                                title:
-                                                'You can\'t send message without login!',
-                                                confirmButtonText: 'Login',
-                                                onPressed: () {
-                                                  context.nav
-                                                      .pushNamedAndRemoveUntil(
-                                                      Routes.login,
-                                                          (route) => false);
-                                                },
-                                              ),
-                                            );
-                                          }
-                                        },
-                                        child: Container(
-                                          width: 46.w,
-                                          height: 46.h,
-                                          decoration: BoxDecoration(
-                                            borderRadius:
-                                            BorderRadius.circular(10.r),
-                                            gradient: const LinearGradient(
-                                              begin: Alignment.topRight,
-                                              end: Alignment.bottomLeft,
-                                              colors: [
-                                                Color(0xFFAE0BFF),
-                                                Color(0xFF2C0BFF),
-                                              ],
-                                            ),
-                                            // boxShadow: [
-                                            //   BoxShadow(
-                                            //     color: const Color(0xFF6A00FF)
-                                            //         .withOpacity(0.35),
-                                            //     blurRadius: 14,
-                                            //     offset: const Offset(0, 8),
-                                            //   ),
-                                            // ],
-                                          ),
-                                          child: Column(
-                                            mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                            children: [
-                                              SvgPicture.asset(
-                                                Assets.svg.chat,
-                                                width: 17.w,
-                                                colorFilter:
-                                                const ColorFilter.mode(
-                                                  Colors.white,
-                                                  BlendMode.srcIn,
-                                                ),
-                                              ),
-                                              Gap(4.h),
-                                              Text(
-                                                'Chats',
-                                                style: TextStyle(
-                                                  fontSize: 7.sp,
-                                                  fontWeight: FontWeight.w700,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-
-                                      Gap(24.w),
-
-                                      /// SIZE PICKER
-                                      if (productDetails.product.productSizeList.isNotEmpty)
-                                        ProductSizePicker(productDetails: productDetails),
-
-                                      Gap(10.w),
-
-                                      /// COLOR PICKER
-                                      if (productDetails.product.colors.isNotEmpty)
-                                        ProductColorPicker(productDetails: productDetails),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-
-                          // Padding(
-                          //   padding:
-                          //       const EdgeInsets.symmetric(horizontal: 15),
-                          //   child: Container(
-                          //     height: 54.h,
-                          //     // width: 240,
-                          //     padding: EdgeInsets.symmetric(horizontal: 10.w),
-                          //     decoration: BoxDecoration(
-                          //       color: Colors.transparent,
-                          //       borderRadius: BorderRadius.circular(18.r),
-                          //       border: Border.all(color: Colors.black12),
-                          //     ),
-                          //     child: Row(
-                          //       children: [
-                          //         CircleAvatar(
-                          //           radius: 20.r,
-                          //           backgroundImage: NetworkImage(
-                          //             productDetails.product.shop.logo,
-                          //           ),
-                          //         ),
-                          //         Gap(12.w),
-                          //         Text(
-                          //           productDetails.product.shop.name,
-                          //           maxLines: 1,
-                          //           overflow: TextOverflow.ellipsis,
-                          //           style: TextStyle(
-                          //             fontSize: 14.sp,
-                          //             fontWeight: FontWeight.w600,
-                          //             color: Colors.black,
-                          //           ),
-                          //         ),
-                          //         Gap(12.w),
-                          //         InkWell(
-                          //           borderRadius: BorderRadius.circular(10.r),
-                          //           onTap: () async {
-                          //             if (ref
-                          //                 .read(hiveServiceProvider)
-                          //                 .userIsLoggedIn()) {
-                          //               final saveUser = await ref
-                          //                   .read(hiveServiceProvider)
-                          //                   .getUserInfo();
-                          //
-                          //               final shop = Shop(
-                          //                 id: productDetails.product.shop.id,
-                          //                 name: productDetails
-                          //                     .product.shop.name,
-                          //                 logo: productDetails
-                          //                     .product.shop.logo,
-                          //               );
-                          //
-                          //               ref
-                          //                   .read(
-                          //                       storeMessageControllerProvider
-                          //                           .notifier)
-                          //                   .storeMessage(
-                          //                     shopId: productDetails
-                          //                         .product.shop.id,
-                          //                     userId: saveUser!.id!,
-                          //                     productId:
-                          //                         productDetails.product.id,
-                          //                   );
-                          //
-                          //               context.nav.pushNamed(
-                          //                 Routes.getChatViewRouteName(
-                          //                     AppConstants.appServiceName),
-                          //                 arguments: shop,
-                          //               );
-                          //             } else {
-                          //               showDialog(
-                          //                 context: context,
-                          //                 builder: (_) => ConfirmationDialog(
-                          //                   title:
-                          //                       'You can\'t send message without login!',
-                          //                   confirmButtonText: 'Login',
-                          //                   onPressed: () {
-                          //                     context.nav
-                          //                         .pushNamedAndRemoveUntil(
-                          //                             Routes.login,
-                          //                             (route) => false);
-                          //                   },
-                          //                 ),
-                          //               );
-                          //             }
-                          //           },
-                          //           child: Container(
-                          //             width: 46.w,
-                          //             height: 46.h,
-                          //             decoration: BoxDecoration(
-                          //               borderRadius:
-                          //                   BorderRadius.circular(10.r),
-                          //               gradient: const LinearGradient(
-                          //                 begin: Alignment.topRight,
-                          //                 end: Alignment.bottomLeft,
-                          //                 colors: [
-                          //                   Color(0xFFAE0BFF),
-                          //                   Color(0xFF2C0BFF),
-                          //                 ],
-                          //               ),
-                          //               // boxShadow: [
-                          //               //   BoxShadow(
-                          //               //     color: const Color(0xFF6A00FF)
-                          //               //         .withOpacity(0.35),
-                          //               //     blurRadius: 14,
-                          //               //     offset: const Offset(0, 8),
-                          //               //   ),
-                          //               // ],
-                          //             ),
-                          //             child: Column(
-                          //               mainAxisAlignment:
-                          //                   MainAxisAlignment.center,
-                          //               children: [
-                          //                 SvgPicture.asset(
-                          //                   Assets.svg.chat,
-                          //                   width: 17.w,
-                          //                   colorFilter:
-                          //                       const ColorFilter.mode(
-                          //                     Colors.white,
-                          //                     BlendMode.srcIn,
-                          //                   ),
-                          //                 ),
-                          //                 Gap(4.h),
-                          //                 Text(
-                          //                   'Chats',
-                          //                   style: TextStyle(
-                          //                     fontSize: 7.sp,
-                          //                     fontWeight: FontWeight.w700,
-                          //                     color: Colors.white,
-                          //                   ),
-                          //                 ),
-                          //               ],
-                          //             ),
-                          //           ),
-                          //         ),
-                          //         Gap(10.w),
-                          //
-                          //         Visibility(
-                          //           visible: productDetails
-                          //               .product.productSizeList.isNotEmpty,
-                          //           child: ProductSizePicker(
-                          //               productDetails: productDetails),
-                          //         ),
-                          //         Gap(10.w),
-                          //         Visibility(
-                          //             visible:
-                          //             productDetails.product.colors.isNotEmpty,
-                          //             child: ProductColorPicker(
-                          //                 productDetails: productDetails)),
-                          //
-                          //       ],
-                          //     ),
-                          //   ),
-                          // ),
-                          Visibility(
-                            visible: ref
-                                .read(masterControllerProvider.notifier)
-                                .materModel
-                                .data
-                                .isMultiVendor,
-                            child: Gap(0.h),
-                          ),
-                        ],
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        padding: EdgeInsets.only(
+                          bottom:
+                              MediaQuery.paddingOf(context).bottom + 120.h,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Gap(8.h),
+                            ProductImagePageView(
+                              productDetails: productDetails,
+                            ),
+                            Gap(10.h),
+                            ProductDescription(
+                              productDetails: productDetails,
+                              onAddToCart: () =>
+                                  onTapCart(productDetails, false),
+                              onBuyNow: () =>
+                                  onTapCart(productDetails, true),
+                              onViewReviews: () {
+                                ref
+                                    .read(productDetailsTabIndexProvider
+                                        .notifier)
+                                    .state = 2;
+                              },
+                            ),
+                            Gap(8.h),
+                            ProductDetailsTabsSection(
+                              productDetails: productDetails,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
                 error: ((error, stackTrace) => Center(
                       child: Text(
@@ -3077,86 +2708,41 @@ class _EcommerceProductDetailsLayoutState
         duration: const Duration(milliseconds: 500),
         child: Row(
           children: [
-            Gap(15.w),
+            Gap(12.w),
             CircleAvatar(
               radius: 18.r,
-              backgroundColor: colors(context).accentColor,
-              // backgroundColor: Colors.white,
+              backgroundColor: Colors.white,
               child: IconButton(
                 padding: EdgeInsets.zero,
                 icon: const Icon(
-                  Icons.keyboard_arrow_left,
+                  Icons.arrow_back_ios_new_rounded,
                   color: Colors.black,
+                  size: 18,
                 ),
                 onPressed: () {
-                  // ref.read(shopControllerProvider.notifier).review.clear();
                   context.nav.pop();
                 },
               ),
             ),
-            Gap(10.w),
-            Expanded(
-              child: GestureDetector(
-                onTap: () => context.nav.pushNamed(
-                  Routes.getProductsViewRouteName(
-                    AppConstants.appServiceName,
-                  ),
-                  arguments: [
-                    null,
-                    'All Product',
-                    null,
-                    null,
-                    null,
-                    subCategories,
-                  ],
+            const Spacer(),
+            InkWell(
+              onTap: () => context.nav.pushNamed(
+                Routes.getProductsViewRouteName(
+                  AppConstants.appServiceName,
                 ),
-                child: Container(
-                  height: 35.h,
-                  padding: EdgeInsets.symmetric(horizontal: 10.w),
-                  decoration: BoxDecoration(
-                    // color: colors(context).light!,
-                    color: Color(0xffDADADA),
-                    borderRadius: BorderRadius.circular(8.r),
-                  ),
-                  child: Row(
-                    // mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      SvgPicture.asset(
-                        Assets.svg.searchHome,
-                        height: 16.h,
-                        colorFilter: const ColorFilter.mode(
-                          // Colors.grey,
-                          Color(0xffFF8E33),
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      Gap(5.w),
-                      Text(
-                        S.of(context).searchProduct,
-                        style: AppTextStyle(context)
-                            .bodyText
-                            .copyWith(color: Colors.grey, fontSize: 12),
-
-                      ),
-                      Gap(5.w),
-                      SizedBox(
-                        width: 20,
-                        child: IconButton(
-                          padding: EdgeInsets.zero,
-                          iconSize: 18,
-                          icon:  Icon(
-                            Icons.camera_alt_outlined,
-                            color: Colors.black.withOpacity(0.3),
-                          ),
-                          onPressed: () {
-
-                          },
-                        ),
-                      ),
-
-                    ],
-                  ),
-                ),
+                arguments: [
+                  null,
+                  'All Product',
+                  null,
+                  null,
+                  null,
+                  subCategories,
+                ],
+              ),
+              child: CircleAvatar(
+                radius: 18.r,
+                backgroundColor: Colors.white,
+                child: Icon(Icons.search, color: Colors.black87, size: 20.sp),
               ),
             ),
             Gap(8.w),
@@ -3164,29 +2750,30 @@ class _EcommerceProductDetailsLayoutState
               type: MaterialType.transparency,
               child: CustomCartWidget(
                 context: context,
-                iconColor: colors(context).dark!,
+                iconColor: Colors.black87,
                 backgroundColor: Colors.white,
               ),
             ),
-            Gap(8.w),
-            InkWell(
-              onTap: () {
-                final websiteUrl =
-                    AppConstants.baseUrl.replaceAll("api", "products");
-                Share.share(
-                    "check out my website $websiteUrl/${productDetails.product.id}/details");
+            Gap(4.w),
+            PopupMenuButton<String>(
+              padding: EdgeInsets.zero,
+              icon: Icon(Icons.more_vert, color: Colors.black87, size: 22.sp),
+              onSelected: (value) {
+                if (value == 'share') {
+                  final websiteUrl =
+                      AppConstants.baseUrl.replaceAll("api", "products");
+                  Share.share(
+                      "check out my website $websiteUrl/${productDetails.product.id}/details");
+                }
               },
-              child: SvgPicture.asset(
-                Assets.svg.share1, // <-- your SVG path
-                height: 22,
-                width: 22,
-                // colorFilter: ColorFilter.mode(
-                //   colors(context).primaryColor,
-                //   BlendMode.srcIn,
-                // ),
-              ),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'share',
+                  child: Text('Share'),
+                ),
+              ],
             ),
-            Gap(15.w),
+            Gap(8.w),
           ],
         ));
   }
@@ -3330,16 +2917,18 @@ class _EcommerceProductDetailsLayoutState
   }
 
   void onTapCart(ProductDetails productDetails, bool isBuyNow) async {
+    final colorIndex = ref.read(selectedProductColorIndex) ?? 0;
+    final sizeIndex = ref.read(selectedProductSizeIndex);
     final AddToCartModel addToCartModel = AddToCartModel(
         productId: productDetails.product.id,
-        quantity: 1,
-        size: productDetails.product.productSizeList.isNotEmpty
-            ? productDetails
-                .product.productSizeList[ref.read(selectedProductSizeIndex)].id
+        quantity: ref.read(productDetailsQuantityProvider),
+        size: productDetails.product.productSizeList.isNotEmpty &&
+                sizeIndex < productDetails.product.productSizeList.length
+            ? productDetails.product.productSizeList[sizeIndex].id
             : null,
-        color: productDetails.product.colors.isNotEmpty
-            ? productDetails
-                .product.colors[ref.read(selectedProductColorIndex)!].id
+        color: productDetails.product.colors.isNotEmpty &&
+                colorIndex < productDetails.product.colors.length
+            ? productDetails.product.colors[colorIndex].id
             : null,
         isBuyNow: isBuyNow);
     if (!ref.read(hiveServiceProvider).userIsLoggedIn()) {
@@ -3440,14 +3029,18 @@ class _EcommerceProductDetailsLayoutState
   Widget _buildBottomActionSection(
       BuildContext context, ProductDetails productDetails) {
     final bool isDisabled = productDetails.product.quantity == 0;
+    final colorPrice = ref.watch(selectedColorPriceProvider);
+    final sizePrice = ref.watch(selectedSizePriceProvider);
+    final basePrice = productDetails.product.discountPrice > 0
+        ? productDetails.product.discountPrice
+        : productDetails.product.price;
+    final displayPrice = basePrice + colorPrice + sizePrice;
 
     return Container(
-      // Padding matches the spacious look in the image
-      padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 15.h),
+      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(
-            top: Radius.circular(35.r)), // Smooth rounded top
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.08),
@@ -3460,76 +3053,64 @@ class _EcommerceProductDetailsLayoutState
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            // 1. Price Text (Brown/Gold Color)
             Text(
-              "\$ ${productDetails.product.price.toInt()}",
+              GlobalFunction.price(
+                ref: ref,
+                price: displayPrice.toString(),
+              ),
               style: TextStyle(
-                fontSize: 15.sp,
+                fontSize: 16.sp,
                 fontWeight: FontWeight.w800,
-                color: const Color(0xFFB6570B), // Exact brown shade from image
-                letterSpacing: 0.5,
+                color: const Color(0xFFFF5722),
               ),
             ),
-
-            // 2. Action Buttons
             Row(
               children: [
-                // "Buy Now" Button (Light Orange)
                 SizedBox(
-                  height: 41.h,
+                  height: 42.h,
                   width: 110.w,
-                  child: ElevatedButton(
-                    onPressed: isDisabled
-                        ? null
-                        : () => onTapCart(productDetails, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFFFF8E33), // Lighter Orange
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.r),
-                        side: BorderSide(color: Color(0xFFFF7F18))
-                      ),
-                    ),
-                    child: Text(
-                      "Buy Now",
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ),
-
-                Gap(12.w),
-
-                // "Add to Cart" Button (Deep Orange with Pink Border)
-                SizedBox(
-                  height: 41.h,
-                  width: 120.w,
-                  child: ElevatedButton(
+                  child: OutlinedButton(
                     onPressed: isDisabled
                         ? null
                         : () => onTapCart(productDetails, false),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor:
-                          const Color(0xFFFE7100), // Vibrant Dark Orange
-                      elevation: 0,
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: Color(0xFFFF5722)),
                       padding: EdgeInsets.zero,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30.r),
-                        // The distinctive pinkish border seen in the image
-                        side: const BorderSide(
-                            color: Color(0xFFFE4A89), width: 1.5),
                       ),
                     ),
                     child: Text(
                       "Add to Cart",
                       style: TextStyle(
                         fontSize: 12.sp,
-                        fontWeight: FontWeight.w500,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFFFF5722),
+                      ),
+                    ),
+                  ),
+                ),
+                Gap(10.w),
+                SizedBox(
+                  height: 42.h,
+                  width: 110.w,
+                  child: ElevatedButton(
+                    onPressed: isDisabled
+                        ? null
+                        : () => onTapCart(productDetails, true),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFFF5722),
+                      elevation: 0,
+                      padding: EdgeInsets.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30.r),
+                      ),
+                    ),
+                    child: Text(
+                      "Buy Now",
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        fontWeight: FontWeight.w600,
                         color: Colors.white,
                       ),
                     ),

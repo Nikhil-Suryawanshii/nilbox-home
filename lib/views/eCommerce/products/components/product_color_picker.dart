@@ -194,164 +194,86 @@ class ProductColorPicker extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedIndex = ref.watch(selectedProductColorIndex);
+    final colors = productDetails.product.colors;
+    if (colors.isEmpty) return const SizedBox.shrink();
 
-    final selectedColorText = selectedIndex == null
-        ? "Colour"
-        : productDetails.product.colors[selectedIndex].name;
+    final rawIndex = ref.watch(selectedProductColorIndex) ?? 0;
+    final selectedIndex = rawIndex.clamp(0, colors.length - 1);
+    if (rawIndex != selectedIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(selectedProductColorIndex.notifier).state = selectedIndex;
+        ref.read(selectedColorPriceProvider.notifier).state =
+            colors[selectedIndex].price;
+      });
+    }
+    final selectedColorName = colors[selectedIndex].name;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(22.r),
-      onTap: () => _openColorDialog(context, ref),
-      child: Container(
-        height: 30.h,
-        padding: EdgeInsets.symmetric(horizontal: 5.w),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22.r),
-          border: Border.all(color: Colors.black),
-          color: Colors.white,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selectedColorText,
-              style: TextStyle(
-                fontSize: 10.sp,
-                fontWeight: FontWeight.w500,
-                // overflow: TextOverflow.ellipsis
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: 'Color: ',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            children: [
+              TextSpan(
+                text: selectedColorName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                ),
               ),
-            ),
-            Gap(3.w),
-            const Icon(Icons.keyboard_arrow_down, size: 18),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  /// 🔥 COLOR DIALOG
-  void _openColorDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) {
-        return Dialog(
-          insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                /// TITLE
-                Text(
-                  "Select Colour",
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                Gap(12.h),
-                const Divider(height: 1),
-
-                /// COLOR LIST
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 12.h,
+        Gap(10.h),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(
+              colors.length,
+              (index) {
+                final isSelected = selectedIndex == index;
+                final colorHex = colors[index].colorCode;
+                
+                return GestureDetector(
+                  onTap: () {
+                    ref.read(selectedProductColorIndex.notifier).state = index;
+                    ref.read(selectedColorPriceProvider.notifier).state =
+                        colors[index].price;
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(right: 12.w),
+                    padding: EdgeInsets.all(3.w), // Inner gap for selected state
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFFFF5722) : Colors.transparent,
+                        width: 2,
+                      ),
                     ),
-                    itemCount: productDetails.product.colors.length,
-                    separatorBuilder: (_, __) => Gap(10.h),
-                    itemBuilder: (context, index) {
-                      final color = productDetails.product.colors[index];
-                      final isSelected =
-                          ref.watch(selectedProductColorIndex) == index;
-
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(14.r),
-                        onTap: () {
-                          ref
-                              .read(selectedProductColorIndex.notifier)
-                              .state = index;
-                          ref
-                              .read(selectedColorPriceProvider.notifier)
-                              .state = color.price;
-
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 10.h,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14.r),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFF9B2CFF)
-                                  : Colors.black12,
-                            ),
-                            color: isSelected
-                                ? const Color(0xFFF4ECFF)
-                                : Colors.white,
-                          ),
-                          child: Row(
-                            children: [
-                              /// COLOR DOT
-                              Container(
-                                height: 18.w,
-                                width: 18.w,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: Color(
-                                    int.parse(
-                                      color.colorCode
-                                          .replaceFirst('#', '0xff'),
-                                    ),
-                                  ),
-                                  border: Border.all(color: Colors.black),
-                                ),
-                              ),
-
-                              Gap(12.w),
-
-                              /// NAME
-                              Expanded(
-                                child: Text(
-                                  color.name,
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-
-                              /// CHECK
-                              if (isSelected)
-                                const Icon(
-                                  Icons.check_circle,
-                                  color: Color(0xFF9B2CFF),
-                                  size: 20,
-                                ),
-                            ],
-                          ),
+                    child: Container(
+                      height: 36.w,
+                      width: 36.w,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.black12,
+                          width: 1,
                         ),
-                      );
-                    },
+                        color: Color(int.parse(colorHex.replaceFirst('#', '0xff'))),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
 }
-

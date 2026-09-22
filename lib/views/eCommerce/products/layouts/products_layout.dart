@@ -1154,7 +1154,7 @@ class _EcommerceProductsLayoutState
               crossAxisCount: 2,
               crossAxisSpacing: 12.w,
               mainAxisSpacing: 12.h,
-              childAspectRatio: 0.52,
+              childAspectRatio: 0.50,
             ),
             delegate: SliverChildBuilderDelegate(
               (context, index) {

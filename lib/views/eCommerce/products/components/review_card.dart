@@ -19,9 +19,12 @@ class ReviewCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8.r),
-          color: Theme.of(context).scaffoldBackgroundColor,
-          border: Border.all(color: colors(context).accentColor!)),
+        borderRadius: BorderRadius.circular(8.r),
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border.all(
+          color: colors(context).accentColor ?? Colors.grey.shade300,
+        ),
+      ),
       margin: EdgeInsets.symmetric(horizontal: 20.w).copyWith(bottom: 10.h),
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
       child: Column(

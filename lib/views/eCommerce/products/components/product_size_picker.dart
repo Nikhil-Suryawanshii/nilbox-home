@@ -497,175 +497,82 @@ class ProductSizePicker extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedIndex = ref.watch(selectedProductSizeIndex);
+    final sizes = productDetails.product.productSizeList;
+    if (sizes.isEmpty) return const SizedBox.shrink();
 
-    final selectedSize = selectedIndex != null
-        ? productDetails.product.productSizeList[selectedIndex].name
-        : "Size";
+    final rawIndex = ref.watch(selectedProductSizeIndex);
+    final selectedIndex = rawIndex.clamp(0, sizes.length - 1);
+    if (rawIndex != selectedIndex) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        ref.read(selectedProductSizeIndex.notifier).state = selectedIndex;
+        ref.read(selectedSizePriceProvider.notifier).state =
+            sizes[selectedIndex].price;
+      });
+    }
+    final selectedSizeName = sizes[selectedIndex].name;
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(22.r),
-      onTap: () => _openSizeDialog(context, ref),
-      child: Container(
-        height: 30.h,
-        padding: EdgeInsets.symmetric(horizontal: 10.w),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22.r),
-          border: Border.all(color: Colors.black),
-          color: Colors.white,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              selectedSize,
-              style: TextStyle(
-                fontSize: 11.sp,
-                fontWeight: FontWeight.w500,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        RichText(
+          text: TextSpan(
+            text: 'Size: ',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+            children: [
+              TextSpan(
+                text: selectedSizeName,
+                style: const TextStyle(
+                  fontWeight: FontWeight.normal,
+                ),
               ),
-            ),
-            Gap(6.w),
-            Icon(Icons.keyboard_arrow_down, size: 18),
-          ],
+            ],
+          ),
         ),
-      ),
-    );
-  }
-
-  void _openSizeDialog(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (_) {
-        return Dialog(
-          insetPadding: EdgeInsets.symmetric(horizontal: 20.w),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20.r),
-          ),
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 16.h),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                /// TITLE
-                Text(
-                  "Select Size",
-                  style: TextStyle(
-                    fontSize: 14.sp,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-
-                Gap(12.h),
-                const Divider(height: 1),
-
-                /// SIZE LIST
-                Flexible(
-                  child: ListView.separated(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 16.w,
-                      vertical: 12.h,
+        Gap(10.h),
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            children: List.generate(
+              sizes.length,
+              (index) {
+                final isSelected = selectedIndex == index;
+                final size = sizes[index];
+                
+                return GestureDetector(
+                  onTap: () {
+                    ref.read(selectedProductSizeIndex.notifier).state = index;
+                    ref.read(selectedSizePriceProvider.notifier).state = size.price;
+                  },
+                  child: Container(
+                    margin: EdgeInsets.only(right: 12.w),
+                    padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 10.h),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20.r),
+                      border: Border.all(
+                        color: isSelected ? const Color(0xFFFF5722) : Colors.black12,
+                        width: 1.5,
+                      ),
                     ),
-                    itemCount:
-                    productDetails.product.productSizeList.length,
-                    separatorBuilder: (_, __) => Gap(10.h),
-                    itemBuilder: (context, index) {
-                      final size =
-                      productDetails.product.productSizeList[index];
-                      final isSelected =
-                          ref.watch(selectedProductSizeIndex) == index;
-
-                      return InkWell(
-                        borderRadius: BorderRadius.circular(14.r),
-                        onTap: () {
-                          ref
-                              .read(
-                              selectedProductSizeIndex.notifier)
-                              .state = index;
-
-                          ref
-                              .read(
-                              selectedSizePriceProvider.notifier)
-                              .state = size.price;
-
-                          Navigator.pop(context);
-                        },
-                        child: Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 12.h,
-                          ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(14.r),
-                            border: Border.all(
-                              color: isSelected
-                                  ? const Color(0xFF9B2CFF)
-                                  : Colors.black12,
-                            ),
-                            color: isSelected
-                                ? const Color(0xFFF4ECFF)
-                                : Colors.white,
-                          ),
-                          child: Row(
-                            children: [
-                              /// SIZE LABEL (PILL)
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 10.w,
-                                  vertical: 4.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  borderRadius:
-                                  BorderRadius.circular(10.r),
-                                  border: Border.all(
-                                    color: isSelected
-                                        ? Colors.black.withOpacity(0.2)
-                                        : Colors.black,
-                                  ),
-                                ),
-                                child: Text(
-                                  size.name.toUpperCase(),
-                                  style: TextStyle(
-                                    fontSize: 12.sp,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ),
-
-                              Gap(12.w),
-
-                              /// SIZE NAME
-                              Expanded(
-                                child: Text(
-                                  "Size ${size.name.toUpperCase()}",
-                                  style: TextStyle(
-                                    fontSize: 13.sp,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
-
-                              /// CHECK ICON
-                              if (isSelected)
-                                const Icon(
-                                  Icons.check_circle,
-                                  color: Color(0xFF9B2CFF),
-                                  size: 20,
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
+                    child: Text(
+                      size.name,
+                      style: TextStyle(
+                        fontSize: 14.sp,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? const Color(0xFFFF5722) : Colors.black87,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
           ),
-        );
-      },
+        ),
+      ],
     );
   }
-
 }
