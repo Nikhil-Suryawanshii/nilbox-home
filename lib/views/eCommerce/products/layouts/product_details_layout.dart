@@ -1,4 +1,7 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
@@ -2588,86 +2591,87 @@ class _EcommerceProductDetailsLayoutState
       },
       child: LoadingWrapperWidget(
         isLoading: ref.watch(cartController).isLoading,
-        child: Scaffold(
-          // floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          // floatingActionButton: ref
-          //     .watch(productDetailsControllerProvider(widget.productId))
-          //     .whenOrNull(
-          //   data: (productDetails) =>
-          //       _buildPriceFloatingButton(productDetails),
-          //   // _buildBottomActionSection(context,productDetails),
-          // ),
-          bottomSheet: ref
-              .watch(productDetailsControllerProvider(widget.productId))
-              .whenOrNull(
-                data: (productDetails) =>
-                    _buildBottomActionSection(context, productDetails),
-              ),
-          backgroundColor: Colors.white,
-          body: ref
-              .watch(productDetailsControllerProvider(widget.productId))
-              .when(
-                data: (productDetails) => Column(
-                  children: [
-                    SafeArea(
-                      bottom: false,
-                      child: SizedBox(
-                        height: 52.h,
-                        child: _buildAppBar(
-                          context: context,
+        child: Platform.isAndroid
+            ? AnnotatedRegion<SystemUiOverlayStyle>(
+                value: const SystemUiOverlayStyle(
+                  systemNavigationBarColor: Color(0xFF000000),
+                  systemNavigationBarDividerColor: Color(0xFF000000),
+                  systemNavigationBarIconBrightness: Brightness.light,
+                  systemNavigationBarContrastEnforced: false,
+                  statusBarColor: Colors.transparent,
+                  statusBarIconBrightness: Brightness.dark,
+                ),
+                child: _buildProductDetailsScaffold(),
+              )
+            : _buildProductDetailsScaffold(),
+      ),
+    );
+  }
+
+  Widget _buildProductDetailsScaffold() {
+    return Scaffold(
+      bottomNavigationBar: ref
+          .watch(productDetailsControllerProvider(widget.productId))
+          .whenOrNull(
+            data: (productDetails) =>
+                _buildBottomActionSection(context, productDetails),
+          ),
+      backgroundColor: Colors.white,
+      body: ref.watch(productDetailsControllerProvider(widget.productId)).when(
+            data: (productDetails) => Column(
+              children: [
+                SafeArea(
+                  bottom: false,
+                  child: SizedBox(
+                    height: 52.h,
+                    child: _buildAppBar(
+                      context: context,
+                      productDetails: productDetails,
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.only(bottom: 24.h),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Gap(8.h),
+                        ProductImagePageView(
                           productDetails: productDetails,
                         ),
-                      ),
-                    ),
-                    Expanded(
-                      child: SingleChildScrollView(
-                        physics: const BouncingScrollPhysics(),
-                        padding: EdgeInsets.only(
-                          bottom:
-                              MediaQuery.paddingOf(context).bottom + 120.h,
+                        Gap(10.h),
+                        ProductDescription(
+                          productDetails: productDetails,
+                          onAddToCart: () =>
+                              onTapCart(productDetails, false),
+                          onBuyNow: () => onTapCart(productDetails, true),
+                          onViewReviews: () {
+                            ref
+                                .read(productDetailsTabIndexProvider.notifier)
+                                .state = 2;
+                          },
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Gap(8.h),
-                            ProductImagePageView(
-                              productDetails: productDetails,
-                            ),
-                            Gap(10.h),
-                            ProductDescription(
-                              productDetails: productDetails,
-                              onAddToCart: () =>
-                                  onTapCart(productDetails, false),
-                              onBuyNow: () =>
-                                  onTapCart(productDetails, true),
-                              onViewReviews: () {
-                                ref
-                                    .read(productDetailsTabIndexProvider
-                                        .notifier)
-                                    .state = 2;
-                              },
-                            ),
-                            Gap(8.h),
-                            ProductDetailsTabsSection(
-                              productDetails: productDetails,
-                            ),
-                          ],
+                        Gap(8.h),
+                        ProductDetailsTabsSection(
+                          productDetails: productDetails,
                         ),
-                      ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-                error: ((error, stackTrace) => Center(
-                      child: Text(
-                        error.toString(),
-                      ),
-                    )),
-                loading: () => const Center(
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-        ),
-      ),
+              ],
+            ),
+            error: ((error, stackTrace) => Center(
+                  child: Text(
+                    error.toString(),
+                  ),
+                )),
+            loading: () => const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
     );
   }
 
@@ -3035,9 +3039,10 @@ class _EcommerceProductDetailsLayoutState
         ? productDetails.product.discountPrice
         : productDetails.product.price;
     final displayPrice = basePrice + colorPrice + sizePrice;
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 12.h),
+    final ctaBar = Container(
+      padding: EdgeInsets.fromLTRB(20.w, 12.h, 20.w, 12.h),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24.r)),
@@ -3049,78 +3054,97 @@ class _EcommerceProductDetailsLayoutState
           ),
         ],
       ),
-      child: SafeArea(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              GlobalFunction.price(
-                ref: ref,
-                price: displayPrice.toString(),
-              ),
-              style: TextStyle(
-                fontSize: 16.sp,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFFFF5722),
-              ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            GlobalFunction.price(
+              ref: ref,
+              price: displayPrice.toString(),
             ),
-            Row(
-              children: [
-                SizedBox(
-                  height: 42.h,
-                  width: 110.w,
-                  child: OutlinedButton(
-                    onPressed: isDisabled
-                        ? null
-                        : () => onTapCart(productDetails, false),
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: Color(0xFFFF5722)),
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.r),
-                      ),
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w800,
+              color: const Color(0xFFFF5722),
+            ),
+          ),
+          Row(
+            children: [
+              SizedBox(
+                height: 42.h,
+                width: 110.w,
+                child: OutlinedButton(
+                  onPressed: isDisabled
+                      ? null
+                      : () => onTapCart(productDetails, false),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Color(0xFFFF5722)),
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.r),
                     ),
-                    child: Text(
-                      "Add to Cart",
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color: const Color(0xFFFF5722),
-                      ),
+                  ),
+                  child: Text(
+                    "Add to Cart",
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: const Color(0xFFFF5722),
                     ),
                   ),
                 ),
-                Gap(10.w),
-                SizedBox(
-                  height: 42.h,
-                  width: 110.w,
-                  child: ElevatedButton(
-                    onPressed: isDisabled
-                        ? null
-                        : () => onTapCart(productDetails, true),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFFF5722),
-                      elevation: 0,
-                      padding: EdgeInsets.zero,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.r),
-                      ),
+              ),
+              Gap(10.w),
+              SizedBox(
+                height: 42.h,
+                width: 110.w,
+                child: ElevatedButton(
+                  onPressed: isDisabled
+                      ? null
+                      : () => onTapCart(productDetails, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF5722),
+                    elevation: 0,
+                    padding: EdgeInsets.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30.r),
                     ),
-                    child: Text(
-                      "Buy Now",
-                      style: TextStyle(
-                        fontSize: 12.sp,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
+                  ),
+                  child: Text(
+                    "Buy Now",
+                    style: TextStyle(
+                      fontSize: 12.sp,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
                     ),
                   ),
                 ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
+    );
+
+    // Android only: dark system nav bar + CTA above it.
+    // iOS already layouts correctly with SafeArea — leave it alone.
+    if (Platform.isAndroid) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ctaBar,
+          Container(
+            height: bottomInset,
+            width: double.infinity,
+            color: const Color(0xFF000000),
+          ),
+        ],
+      );
+    }
+
+    return SafeArea(
+      top: false,
+      child: ctaBar,
     );
   }
 

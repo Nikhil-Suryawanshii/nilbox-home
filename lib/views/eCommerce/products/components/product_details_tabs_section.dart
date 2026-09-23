@@ -55,6 +55,7 @@ class _ProductDetailsTabsSectionState
   }
 
   List<String> _featureLabels() {
+    // Only use product text from API — never show watch-specific static features.
     final short = widget.productDetails.product.shortDescription.trim();
     final fromShort = short
         .split(RegExp(r'[.•|,\n]'))
@@ -62,24 +63,29 @@ class _ProductDetailsTabsSectionState
         .where((e) => e.length > 3 && e.length < 40)
         .take(6)
         .toList();
-    if (fromShort.length >= 3) return fromShort;
-    return const [
-      'Heart Rate Monitoring',
-      '100+ Sports Modes',
-      'Water Resistant',
-      'Long Battery Life',
-      'Sleep Tracking',
-      'Smart Notifications',
-    ];
+    if (fromShort.isNotEmpty) return fromShort;
+
+    // Strip simple HTML tags from description and try again.
+    final description = widget.productDetails.product.description
+        .replaceAll(RegExp(r'<[^>]*>'), ' ')
+        .replaceAll(RegExp(r'\s+'), ' ')
+        .trim();
+    final fromDescription = description
+        .split(RegExp(r'[.•|,\n]'))
+        .map((e) => e.trim())
+        .where((e) => e.length > 3 && e.length < 40)
+        .take(6)
+        .toList();
+    return fromDescription;
   }
 
   static const _featureIcons = [
-    Icons.favorite_border,
-    Icons.sports_gymnastics_outlined,
-    Icons.water_drop_outlined,
-    Icons.battery_charging_full_outlined,
-    Icons.bedtime_outlined,
-    Icons.notifications_none_outlined,
+    Icons.check_circle_outline,
+    Icons.star_outline,
+    Icons.local_offer_outlined,
+    Icons.verified_outlined,
+    Icons.thumb_up_alt_outlined,
+    Icons.workspace_premium_outlined,
   ];
 
   @override
@@ -152,58 +158,60 @@ class _ProductDetailsTabsSectionState
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Key Features',
-          style: TextStyle(
-            fontSize: 16.sp,
-            fontWeight: FontWeight.w700,
-            color: Colors.black,
+        if (labels.isNotEmpty) ...[
+          Text(
+            'Key Features',
+            style: TextStyle(
+              fontSize: 16.sp,
+              fontWeight: FontWeight.w700,
+              color: Colors.black,
+            ),
           ),
-        ),
-        Gap(12.h),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: labels.length.clamp(0, 6),
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            mainAxisSpacing: 10.h,
-            crossAxisSpacing: 10.w,
-            childAspectRatio: 1.05,
-          ),
-          itemBuilder: (context, index) {
-            return Container(
-              padding: EdgeInsets.all(10.w),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF7F7F7),
-                borderRadius: BorderRadius.circular(12.r),
-              ),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    _featureIcons[index % _featureIcons.length],
-                    size: 26.sp,
-                    color: Colors.black87,
-                  ),
-                  Gap(8.h),
-                  Text(
-                    labels[index],
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 11.sp,
-                      fontWeight: FontWeight.w600,
+          Gap(12.h),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: labels.length.clamp(1, 6),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              mainAxisSpacing: 10.h,
+              crossAxisSpacing: 10.w,
+              childAspectRatio: 1.05,
+            ),
+            itemBuilder: (context, index) {
+              return Container(
+                padding: EdgeInsets.all(10.w),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F7F7),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _featureIcons[index % _featureIcons.length],
+                      size: 26.sp,
                       color: Colors.black87,
                     ),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        Gap(16.h),
+                    Gap(8.h),
+                    Text(
+                      labels[index],
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 11.sp,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+          Gap(16.h),
+        ],
         ClipRRect(
           borderRadius: BorderRadius.circular(14.r),
           child: Stack(

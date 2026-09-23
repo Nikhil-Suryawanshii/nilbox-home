@@ -38,29 +38,12 @@ class _ProductDescriptionState extends ConsumerState<ProductDescription> {
     });
   }
 
-  void _incrementQuantity() {
-    final maxQty = widget.productDetails.product.quantity;
-    final current = ref.read(productDetailsQuantityProvider);
-    if (current < maxQty) {
-      ref.read(productDetailsQuantityProvider.notifier).state = current + 1;
-    }
-  }
-
-  void _decrementQuantity() {
-    final current = ref.read(productDetailsQuantityProvider);
-    if (current > 1) {
-      ref.read(productDetailsQuantityProvider.notifier).state = current - 1;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final product = widget.productDetails.product;
-    final quantity = ref.watch(productDetailsQuantityProvider);
     final colorPrice = ref.watch(selectedColorPriceProvider);
     final sizePrice = ref.watch(selectedSizePriceProvider);
     final bool inStock = product.quantity > 0;
-    final bool isDisabled = !inStock;
     final bool showUrgency = product.quantity > 0 && product.quantity <= 25;
 
     final basePrice =
@@ -252,124 +235,7 @@ class _ProductDescriptionState extends ConsumerState<ProductDescription> {
             ProductSizePicker(productDetails: widget.productDetails),
             Gap(18.h),
           ],
-          Row(
-            children: [
-              Text(
-                'Quantity',
-                style: TextStyle(
-                  fontSize: 16.sp,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              Gap(16.w),
-              Container(
-                height: 40.h,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.black12),
-                  borderRadius: BorderRadius.circular(20.r),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    InkWell(
-                      borderRadius: BorderRadius.only(
-                        topLeft: Radius.circular(20.r),
-                        bottomLeft: Radius.circular(20.r),
-                      ),
-                      onTap: isDisabled ? null : _decrementQuantity,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Icon(Icons.remove,
-                            size: 20.sp, color: Colors.black87),
-                      ),
-                    ),
-                    Container(
-                      constraints: BoxConstraints(minWidth: 30.w),
-                      alignment: Alignment.center,
-                      child: Text(
-                        '$quantity',
-                        style: TextStyle(
-                          fontSize: 16.sp,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    InkWell(
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(20.r),
-                        bottomRight: Radius.circular(20.r),
-                      ),
-                      onTap: isDisabled ? null : _incrementQuantity,
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        child: Icon(Icons.add,
-                            size: 20.sp, color: Colors.black87),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          Gap(20.h),
-          Row(
-            children: [
-              Expanded(
-                child: SizedBox(
-                  height: 48.h,
-                  child: OutlinedButton.icon(
-                    onPressed: isDisabled ? null : widget.onAddToCart,
-                    icon: Icon(Icons.shopping_cart_outlined,
-                        color: isDisabled ? Colors.grey : _kAccent, size: 20.sp),
-                    label: Text(
-                      'Add to Cart',
-                      style: TextStyle(
-                        color: isDisabled ? Colors.grey : _kAccent,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14.sp,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: isDisabled ? Colors.grey.shade300 : _kAccent,
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.r),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Gap(12.w),
-              Expanded(
-                child: SizedBox(
-                  height: 48.h,
-                  child: ElevatedButton(
-                    onPressed: isDisabled ? null : widget.onBuyNow,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _kAccent,
-                      disabledBackgroundColor: Colors.grey.shade300,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(30.r),
-                      ),
-                    ),
-                    child: Text(
-                      'Buy Now',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 14.sp,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          Gap(24.h),
+          Gap(8.h),
           Divider(color: Colors.grey.shade200, thickness: 1),
           Gap(16.h),
           Row(
