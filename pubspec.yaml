@@ -105,6 +105,7 @@ flutter:
     - assets/png/spiralView3.png
     - assets/png/onboardingview/spiral4.png
     - assets/png/onboardingview/onboarding_spiral2.png
+    - assets/splash/
     - assets/json/
   fonts:
     - family: Mulish
