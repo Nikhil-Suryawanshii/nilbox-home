@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
-import 'package:ready_ecommerce/routes.dart';
-import 'package:ready_ecommerce/utils/context_less_navigation.dart';
 
 import 'onboarding_view1.dart';
 
@@ -15,288 +14,316 @@ class OnboardingFirst extends ConsumerStatefulWidget {
 }
 
 class _OnboardingFirstState extends ConsumerState<OnboardingFirst> {
+  static const _coral = Color(0xFFF28B82);
+  static const _coralSoft = Color(0xFFFFA69E);
+  static const _coralAccent = Color(0xFFE86A5C);
+  static const _bubbleWhite = Color(0xFFFFF8F6);
+  static const _labelText = Color(0xFF2D2D2D);
+
+  void _goNext() {
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => const OnboardingView1(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(235, 142, 130, 1),
       body: Container(
         width: double.infinity,
         height: double.infinity,
-
-        // gradient: LinearGradient(
-        //   begin: Alignment.topLeft,
-        //   end: Alignment.bottomRight,
-        //   colors: [
-        //     Color(0xFFFFB5B5),
-        //     Color(0xFFFFADAD),
-        //     Color(0xFFFFA5A5),
-        //   ],
-        // ),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [_coralSoft, _coral, Color(0xFFE87A6C)],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
         child: Stack(
           children: [
-            // Fixed positioned bubbles with elevation
-            // Row 1 - Top area
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_Jacket.png',
-              label: 'Jackets',
-              left: 140.w,
-              top: 160.h,
-              size: 95.w,
-              opacity: 0.35,
-            ),
-            _buildFloatingBubble(
-              fontsize: 20.sp,
-              label: 'Auction',
-              left: 20.w,
-              top: 200.h,
-              size: 95.w,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_Jacket.png',
-              label: 'Jackets',
-              left: 0.w,
-              top: 300.h,
-              size: 95.w,
-              opacity: 0.35,
-            ),
-            _buildFloatingBubble(
-              icon: Icons.chair_outlined,
-              label: 'Sofas',
-              left: 20.w,
-              top: 400.h,
-              size: 95.w,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_desk.png',
-              label: 'Desk',
-              left: 120.w,
-              top: 420.h,
-              size: 95.w,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              fontsize: 20.sp,
-              label: 'Duets',
-              left: 110.w,
-              top: 500.h,
-              size: 95.w,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              fontsize: 25.sp,
-              label: 'Stories',
-              left: 10.w,
-              top: 500.h,
-              size: 115.w,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              color: Color.fromRGBO(246, 149, 137, 1),
-              imageAsset: 'assets/png/onboarding_Jacket.png',
-              label: 'Jackets',
-              left: 70.w,
-              top: 600.h,
-              size: 110.w,
-              fontsize: 12.sp,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_products.png',
-              color: Color.fromRGBO(255, 191, 185, 1),
-              label: '34k Products',
-              left: 90.w,
-              top: 240.h,
-              size: 150.w,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_sweater.png',
-              label: 'Sweater',
-              left: 233.w,
-              top: 210.h,
-              size: 95.w,
-              opacity: 0.35,
-            ),
-            _buildFloatingBubble(
-              color: Color.fromRGBO(246, 149, 137, 1),
-              label: 'Shirt',
-              imageAsset: 'assets/png/onboarding_shirt.png',
-              left: 330.w,
-              top: 280.h,
-              size: 100.w,
-              fontsize: 12.sp,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_user.png',
-              label: '1.4k Users',
-              left: 230.w,
-              top: 350.h,
-              size: 100.w,
-              fontsize: 12.sp,
-              opacity: 0.9,
-            ),
-            _buildFloatingBubble(
-              label: 'Post',
-              left: 300.w,
-              top: 110.h,
-              size: 120.w,
-              opacity: 0.9,
-              isTextOnly: true,
-            ),
-
-            // Row 2 after 1.4k users
-            _buildFloatingBubble(
-              icon: Icons.bed,
-              label: 'Bed',
-              left: 300.w,
-              top: 430.h,
-              size: 135.w,
-              opacity: 0.35,
-            ),
-            _buildFloatingBubble(
-              imageAsset: 'assets/png/onboarding_Jacket.png',
-              color: Color.fromRGBO(255, 191, 185, 1),
-              label: 'Jackets',
-              left: 198.w,
-              top: 470.h,
-              size: 105.w,
-              opacity: 0.3,
-            ),
-
-            _buildFloatingBubble(
-              fontsize: 30.sp,
-              label: 'Reels',
-              left: 218.w,
-              top: 570.h,
-              size: 105.w,
-              opacity: 0.4,
-            ),
-
-            // Top content
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 0.h),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                     Text(
-                      'Welcome to',
-                      style: TextStyle(
-                        fontSize: 25.sp,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    Row(
-                      children: [
-                        Text(
-                          'Nilbox ',
-                          style: TextStyle(
-                            fontSize: 25.sp,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                        Container(
-                          // height: 40.h,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24.r),
-                          ),
-                          child: Center(
-                            child: Image.asset(
-                              'assets/png/onboarding_clap.png',
-                              height: 40.h,
-                              width: 40.w,
-                              fit: BoxFit.fill,
-                            ),
-                          ),
-                        )
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
+            // Soft depth orbs (subtle, not decorative clutter)
             Positioned(
-              bottom: 20.h,
-              left: 20.w,
-              right: 20.w,
-              child: Row(
-                children: [
-                  Text(
-                    'The best social\nE-commerce App of\nThe century for your\nfashion Needs!',
-                    style: TextStyle(
-                      fontSize: 15.sp,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                      height: 1.3,
-                    ),
-                  ),
-                  // Gap(120.w),
-                  const Spacer(),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: GestureDetector(
-                      onTap: () {
-                        // Navigate to next screen
-                        // context.nav.pushNamedAndRemoveUntil(
-                        //     Routes.onbarding1, (route) => false);
-                        Navigator.of(context).pushReplacement(
-                          PageRouteBuilder(
-                            pageBuilder: (_, __, ___) => const OnboardingView1(),
-                            transitionsBuilder: (_, animation, __, child) {
-                              return FadeTransition(
-                                opacity: animation,
-                                child: child,
-                              );
-                            },
-                            transitionDuration: const Duration(milliseconds: 400),
-                          ),
-                        );
-                      },
-                      child: Container(
-                        width: 70.w,
-                        height: 70.w,
-                        decoration: BoxDecoration(
-                          color: Color(0xFF2D2D2D),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.25),
-                              blurRadius: 15,
-                              offset: Offset(0, 8),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+              top: -80,
+              right: -60,
+              child: _GlowOrb(
+                  size: 220, color: Colors.white.withValues(alpha: 0.10)),
+            ),
+            Positioned(
+              bottom: 40,
+              left: -70,
+              child: _GlowOrb(
+                  size: 200, color: Colors.white.withValues(alpha: 0.08)),
+            ),
+            SafeArea(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final w = constraints.maxWidth;
+                  final h = constraints.maxHeight;
+                  final bottomReserve = (h * 0.16).clamp(100.0, 140.0);
+                  final headerReserve = (h * 0.17).clamp(108.0, 140.0);
+                  final areaTop = headerReserve;
+                  final areaH = h - headerReserve - bottomReserve;
+                  final areaW = w;
+
+                  final mainSize = (areaW * 0.46).clamp(150.0, 190.0);
+                  final usersSize = (areaW * 0.22).clamp(78.0, 98.0);
+                  final smallSize = (areaW * 0.20).clamp(70.0, 90.0);
+
+                  Offset at(double nx, double ny) =>
+                      Offset(areaW * nx, areaH * ny);
+
+                  (double left, double top) fromCenter(Offset c, double size) =>
+                      (c.dx - size / 2, c.dy - size / 2);
+
+                  // Radial organic layout matching the reference
+                  final audioPos = fromCenter(at(0.50, 0.04), smallSize);
+                  final jacketPos = fromCenter(at(0.16, 0.18), smallSize);
+                  final shoesPos = fromCenter(at(0.84, 0.16), smallSize);
+                  final beautyPos =
+                      fromCenter(at(0.10, 0.46), smallSize * 0.95);
+                  final techPos = fromCenter(at(0.90, 0.42), smallSize * 0.95);
+                  final mainPos = fromCenter(at(0.50, 0.42), mainSize);
+                  final homePos = fromCenter(at(0.16, 0.72), smallSize);
+                  final accessoriesPos =
+                      fromCenter(at(0.86, 0.62), smallSize * 0.95);
+                  final fashionPos = fromCenter(at(0.78, 0.84), smallSize);
+                  // Users sits under main; label hangs below so reserve height
+                  final usersExtra = usersSize * 0.32;
+                  final usersPos = fromCenter(
+                    at(0.42, 0.78),
+                    usersSize + usersExtra,
+                  );
+
+                  return Stack(
+                    children: [
+                      Positioned(
+                        top: areaTop,
+                        left: 0,
+                        right: 0,
+                        height: areaH,
+                        child: Stack(
+                          clipBehavior: Clip.none,
                           children: [
-                            Icon(
-                              Icons.arrow_forward,
-                              color: Colors.white,
-                              size: 32.sp,
+                            _ProductBubble(
+                              image: 'assets/onboarding/headphones.png',
+                              title: 'Audio',
+                              size: smallSize,
+                              left: audioPos.$1,
+                              top: audioPos.$2,
+                              enterDelay: 500.ms,
+                              floatAmplitude: 3,
+                              floatDuration: 2300.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
                             ),
-                            Gap(4.h),
-                            Text(
-                              'Get started',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 8.sp,
-                                fontWeight: FontWeight.w500,
-                              ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/jacket.png',
+                              title: 'Jackets',
+                              size: smallSize,
+                              left: jacketPos.$1,
+                              top: jacketPos.$2,
+                              enterDelay: 300.ms,
+                              floatAmplitude: 4,
+                              floatDuration: 2400.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/shoe.png',
+                              title: 'Shoes',
+                              size: smallSize,
+                              left: shoesPos.$1,
+                              top: shoesPos.$2,
+                              enterDelay: 400.ms,
+                              floatAmplitude: 4,
+                              floatDuration: 2600.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/perfume.png',
+                              title: 'Beauty',
+                              size: smallSize * 0.95,
+                              left: beautyPos.$1,
+                              top: beautyPos.$2,
+                              enterDelay: 800.ms,
+                              floatAmplitude: 3,
+                              floatDuration: 2500.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/smartwatch.png',
+                              title: 'Tech',
+                              size: smallSize * 0.95,
+                              left: techPos.$1,
+                              top: techPos.$2,
+                              enterDelay: 1000.ms,
+                              floatAmplitude: 3,
+                              floatDuration: 2800.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            Positioned(
+                              left: mainPos.$1,
+                              top: mainPos.$2,
+                              child: _MainProductsBubble(
+                                size: mainSize,
+                                accent: _coralAccent,
+                              )
+                                  .animate(delay: 600.ms)
+                                  .fadeIn(
+                                    duration: 450.ms,
+                                    curve: Curves.easeOutCubic,
+                                  )
+                                  .scale(
+                                    begin: const Offset(0.85, 0.85),
+                                    end: const Offset(1, 1),
+                                    duration: 500.ms,
+                                    curve: Curves.easeOutBack,
+                                  )
+                                  .moveY(
+                                    begin: 14,
+                                    end: 0,
+                                    duration: 480.ms,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                            ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/furniture.png',
+                              title: 'Home',
+                              size: smallSize,
+                              left: homePos.$1,
+                              top: homePos.$2,
+                              enterDelay: 1000.ms,
+                              floatAmplitude: 3,
+                              floatDuration: 2550.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/sunglasses.png',
+                              title: 'Accessories',
+                              size: smallSize * 0.95,
+                              left: accessoriesPos.$1,
+                              top: accessoriesPos.$2,
+                              enterDelay: 900.ms,
+                              floatAmplitude: 4,
+                              floatDuration: 2700.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            _ProductBubble(
+                              image: 'assets/onboarding/shopping_bag.png',
+                              title: 'Fashion',
+                              size: smallSize,
+                              left: fashionPos.$1,
+                              top: fashionPos.$2,
+                              enterDelay: 1100.ms,
+                              floatAmplitude: 4,
+                              floatDuration: 2450.ms,
+                              bubbleColor: _bubbleWhite,
+                              labelColor: _labelText,
+                            ),
+                            Positioned(
+                              left: usersPos.$1,
+                              top: usersPos.$2,
+                              child: _UsersBubble(size: usersSize)
+                                  .animate(delay: 1200.ms)
+                                  .fadeIn(
+                                    duration: 420.ms,
+                                    curve: Curves.easeOutCubic,
+                                  )
+                                  .scale(
+                                    begin: const Offset(0.82, 0.82),
+                                    end: const Offset(1, 1),
+                                    duration: 480.ms,
+                                    curve: Curves.easeOutBack,
+                                  )
+                                  .moveY(
+                                    begin: 12,
+                                    end: 0,
+                                    duration: 450.ms,
+                                    curve: Curves.easeOutCubic,
+                                  ),
                             ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                ],
+
+                      // Header
+                      Positioned(
+                        top: 4.h,
+                        left: 22.w,
+                        right: 22.w,
+                        child: const _OnboardingHeader()
+                            .animate()
+                            .fadeIn(duration: 400.ms, curve: Curves.easeOut)
+                            .moveY(
+                              begin: -10,
+                              end: 0,
+                              duration: 420.ms,
+                              curve: Curves.easeOutCubic,
+                            ),
+                      ),
+
+                      // Bottom copy + Get Started
+                      Positioned(
+                        left: 22.w,
+                        right: 20.w,
+                        bottom: 12.h,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'Discover, shop and connect\nwith products you love.',
+                                style: TextStyle(
+                                  fontFamily: 'Mulish',
+                                  fontSize: 15.sp,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                  height: 1.35,
+                                ),
+                              )
+                                  .animate(delay: 1400.ms)
+                                  .fadeIn(
+                                    duration: 420.ms,
+                                    curve: Curves.easeOut,
+                                  )
+                                  .moveY(
+                                    begin: 12,
+                                    end: 0,
+                                    duration: 450.ms,
+                                    curve: Curves.easeOutCubic,
+                                  ),
+                            ),
+                            Gap(12.w),
+                            _GetStartedButton(onTap: _goNext)
+                                .animate(delay: 1600.ms)
+                                .fadeIn(
+                                  duration: 400.ms,
+                                  curve: Curves.easeOut,
+                                )
+                                .scale(
+                                  begin: const Offset(0.88, 0.88),
+                                  end: const Offset(1, 1),
+                                  duration: 450.ms,
+                                  curve: Curves.easeOutBack,
+                                ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ],
@@ -304,79 +331,484 @@ class _OnboardingFirstState extends ConsumerState<OnboardingFirst> {
       ),
     );
   }
+}
 
-  Widget _buildFloatingBubble({
-    IconData? icon,
-    required String label,
-    double? left,
-    Color? color,
-    double? fontsize,
-    double? right,
-    required double top,
-    required double size,
-    String? imageAsset,
-    required double opacity,
-    bool isTextOnly = false,
-  }) {
-    return Positioned(
-      left: left,
-      right: right,
-      top: top,
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({required this.size, required this.color});
+
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: color ?? Color.fromRGBO(235, 142, 130, 1),
+          shape: BoxShape.circle,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _OnboardingHeader extends StatelessWidget {
+  const _OnboardingHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Welcome to',
+          style: TextStyle(
+            fontFamily: 'Mulish',
+            fontSize: 26.sp,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+            height: 1.15,
+          ),
+        ),
+        SizedBox(height: 2.h),
+        Row(
+          children: [
+            Text(
+              'Nilbox',
+              style: TextStyle(
+                fontFamily: 'Mulish',
+                fontSize: 30.sp,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                height: 1.1,
+              ),
+            ),
+            SizedBox(width: 8.w),
+            Text('👋', style: TextStyle(fontSize: 26.sp)),
+          ],
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          'Your marketplace for every lifestyle.',
+          style: TextStyle(
+            fontFamily: 'Mulish',
+            fontSize: 13.sp,
+            fontWeight: FontWeight.w500,
+            color: Colors.white.withValues(alpha: 0.88),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ProductBubble extends StatelessWidget {
+  const _ProductBubble({
+    required this.image,
+    required this.title,
+    required this.size,
+    required this.left,
+    required this.top,
+    required this.enterDelay,
+    required this.floatAmplitude,
+    required this.floatDuration,
+    required this.bubbleColor,
+    required this.labelColor,
+  });
+
+  final String image;
+  final String title;
+  final double size;
+  final double left;
+  final double top;
+  final Duration enterDelay;
+  final double floatAmplitude;
+  final Duration floatDuration;
+  final Color bubbleColor;
+  final Color labelColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final labelHeight = (size * 0.28).clamp(22.0, 28.0);
+
+    return Positioned(
+      left: left,
+      top: top,
+      child: Animate(
+        delay: enterDelay + 480.ms,
+        onPlay: (controller) => controller.repeat(reverse: true),
+        effects: [
+          MoveEffect(
+            begin: Offset(0, -floatAmplitude),
+            end: Offset(0, floatAmplitude),
+            duration: floatDuration,
+            curve: Curves.easeInOut,
+          ),
+        ],
+        child: SizedBox(
+          width: size,
+          height: size + labelHeight * 0.45,
+          child: Stack(
+            alignment: Alignment.topCenter,
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: size,
+                height: size,
+                decoration: BoxDecoration(
+                  color: bubbleColor,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.10),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                padding: EdgeInsets.all(size * 0.16),
+                child: Image.asset(
+                  image,
+                  fit: BoxFit.contain,
+                  filterQuality: FilterQuality.medium,
+                ),
+              ),
+              Positioned(
+                bottom: 0,
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: (size * 0.14).clamp(8.0, 14.0),
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    title,
+                    style: TextStyle(
+                      fontFamily: 'Mulish',
+                      color: labelColor,
+                      fontSize: (size * 0.12).clamp(9.0, 11.5),
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        )
+            .animate(delay: enterDelay)
+            .fadeIn(duration: 420.ms, curve: Curves.easeOutCubic)
+            .scale(
+              begin: const Offset(0.78, 0.78),
+              end: const Offset(1, 1),
+              duration: 480.ms,
+              curve: Curves.easeOutBack,
+            )
+            .moveY(
+              begin: 14,
+              end: 0,
+              duration: 460.ms,
+              curve: Curves.easeOutCubic,
+            ),
+      ),
+    );
+  }
+}
+
+class _MainProductsBubble extends StatelessWidget {
+  const _MainProductsBubble({
+    required this.size,
+    required this.accent,
+  });
+
+  final double size;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    final thumb = size * 0.30;
+
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 28,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          SizedBox(
+            height: thumb * 1.7,
+            width: size * 0.78,
+            child: Stack(
+              alignment: Alignment.center,
+              clipBehavior: Clip.none,
+              children: [
+                Positioned(
+                  left: size * 0.02,
+                  top: thumb * 0.25,
+                  child: _ProductThumb(
+                    asset: 'assets/onboarding/shopping_bag.png',
+                    size: thumb * 1.05,
+                  ),
+                ),
+                Positioned(
+                  right: size * 0.02,
+                  top: thumb * 0.15,
+                  child: _ProductThumb(
+                    asset: 'assets/onboarding/headphones.png',
+                    size: thumb * 1.05,
+                  ),
+                ),
+                Positioned(
+                  bottom: 0,
+                  left: size * 0.14,
+                  child: _ProductThumb(
+                    asset: 'assets/onboarding/shoe.png',
+                    size: thumb * 1.12,
+                  ),
+                ),
+                Positioned(
+                  bottom: thumb * 0.05,
+                  right: size * 0.10,
+                  child: _ProductThumb(
+                    asset: 'assets/onboarding/smartwatch.png',
+                    size: thumb * 0.95,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: size * 0.03),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: '34k',
+                  style: TextStyle(
+                    fontFamily: 'Mulish',
+                    color: accent,
+                    fontSize: (size * 0.105).clamp(14.0, 18.0),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                TextSpan(
+                  text: ' Products',
+                  style: TextStyle(
+                    fontFamily: 'Mulish',
+                    color: const Color(0xFF2D2D2D),
+                    fontSize: (size * 0.095).clamp(13.0, 16.0),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 2.h),
+          Text(
+            'Discover products you love',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontFamily: 'Mulish',
+              color: const Color(0xFF6B6B6B),
+              fontSize: (size * 0.055).clamp(9.0, 11.0),
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProductThumb extends StatelessWidget {
+  const _ProductThumb({required this.asset, required this.size});
+
+  final String asset;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Image.asset(
+        asset,
+        fit: BoxFit.contain,
+        filterQuality: FilterQuality.medium,
+      ),
+    );
+  }
+}
+
+class _UsersBubble extends StatelessWidget {
+  const _UsersBubble({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatar = size * 0.34;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.10),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          alignment: Alignment.center,
+          child: SizedBox(
+            height: avatar,
+            width: avatar * 2.35,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: 0,
+                  child: _UserAvatar(
+                    size: avatar,
+                    asset: 'assets/png/onboarding_user.png',
+                  ),
+                ),
+                Positioned(
+                  left: avatar * 0.52,
+                  child: _UserAvatar(
+                    size: avatar,
+                    asset: 'assets/png/onboarding_user.png',
+                  ),
+                ),
+                Positioned(
+                  left: avatar * 1.04,
+                  child: Container(
+                    width: avatar,
+                    height: avatar,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF28B82),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: Icon(
+                      Icons.add_rounded,
+                      size: avatar * 0.55,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+        SizedBox(height: 8.h),
+        Text(
+          '1.4k Users',
+          style: TextStyle(
+            fontFamily: 'Mulish',
+            color: Colors.white,
+            fontSize: 12.sp,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UserAvatar extends StatelessWidget {
+  const _UserAvatar({required this.size, required this.asset});
+
+  final double size;
+  final String asset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 2),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 4,
+          ),
+        ],
+      ),
+      child: ClipOval(
+        child: Image.asset(asset, fit: BoxFit.cover),
+      ),
+    );
+  }
+}
+
+class _GetStartedButton extends StatelessWidget {
+  const _GetStartedButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 72.w,
+        height: 72.w,
+        decoration: BoxDecoration(
+          color: const Color(0xFF2D2D2D),
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 20,
-              offset: Offset(0, 10),
+              color: Colors.black.withValues(alpha: 0.22),
+              blurRadius: 14,
+              offset: const Offset(0, 7),
             ),
           ],
         ),
-        child: isTextOnly
-            ? Center(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: size * 0.16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (imageAsset != null)
-                    Image.asset(
-                      imageAsset,
-                      height: size * 0.35,
-                      width: size * 0.35,
-                      fit: BoxFit.contain,
-                    )
-                  else if (icon != null)
-                    Icon(
-                      icon,
-                      color: Colors.white,
-                      size: size * 0.35,
-                    ),
-                  Gap(4.h),
-                  Text(
-                    label,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: size * 0.13,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 26.sp),
+            Gap(3.h),
+            Text(
+              'Get started',
+              style: TextStyle(
+                fontFamily: 'Mulish',
+                color: Colors.white,
+                fontSize: 8.sp,
+                fontWeight: FontWeight.w500,
               ),
+            ),
+          ],
+        ),
       ),
     );
   }
