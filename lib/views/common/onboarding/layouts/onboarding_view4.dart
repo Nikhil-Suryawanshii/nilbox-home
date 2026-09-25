@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:gap/gap.dart';
@@ -11,7 +13,7 @@ class OnboardingView4 extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    Widget content = Scaffold(
       backgroundColor: Color.fromRGBO(221, 212, 237, 1),
       body: Column(
         children: [
@@ -94,5 +96,17 @@ class OnboardingView4 extends StatelessWidget {
         ],
       ),
     );
+
+    if (!kIsWeb && Platform.isAndroid) {
+      content = Container(
+        color: Colors.black,
+        child: SafeArea(
+          top: false,
+          bottom: true,
+          child: content,
+        ),
+      );
+    }
+    return content;
   }
 }

@@ -109,6 +109,7 @@
 //   }
 // }
 ///-----------
+import 'dart:io';
 import 'package:connectivity_wrapper/connectivity_wrapper.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -169,8 +170,11 @@ import 'package:ready_ecommerce/views/common/splash/layouts/splash_layout.dart';
 //   await Hive.openBox<HiveCartModel>(AppConstants.cartModelBox);
 //   runApp(const ProviderScope(child: MyApp()));
 // }
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   /// 🔥 FIREBASE (ONLY MOBILE)
   if (!kIsWeb) {
@@ -215,7 +219,13 @@ void main() async {
   Hive.registerAdapter(HiveCartModelAdapter());
   await Hive.openBox<HiveCartModel>(AppConstants.cartModelBox);
 
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  if (!kIsWeb && Platform.isAndroid) {
+    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.black,
+      systemNavigationBarIconBrightness: Brightness.light, 
+    ));
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.manual, overlays: [SystemUiOverlay.top, SystemUiOverlay.bottom]);
+  }
 
   runApp(
     const ProviderScope(

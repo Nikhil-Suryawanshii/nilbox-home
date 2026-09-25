@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -34,18 +36,17 @@ class _OnboardingFirstState extends ConsumerState<OnboardingFirst> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [_coralSoft, _coral, Color(0xFFE87A6C)],
-            stops: [0.0, 0.5, 1.0],
-          ),
+    Widget content = Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [_coralSoft, _coral, Color(0xFFE87A6C)],
+          stops: [0.0, 0.5, 1.0],
         ),
+      ),
         child: Stack(
           children: [
             // Soft depth orbs (subtle, not decorative clutter)
@@ -328,7 +329,19 @@ class _OnboardingFirstState extends ConsumerState<OnboardingFirst> {
             ),
           ],
         ),
-      ),
+      );
+
+    if (!kIsWeb && Platform.isAndroid) {
+      content = SafeArea(
+        top: false,
+        bottom: true,
+        child: content,
+      );
+    }
+
+    return Scaffold(
+      backgroundColor: (!kIsWeb && Platform.isAndroid) ? Colors.black : Colors.white,
+      body: content,
     );
   }
 }
