@@ -154,15 +154,51 @@ class _SplashLayoutState extends ConsumerState<SplashLayout> {
   @override
   Widget build(BuildContext context) {
     Widget content = _videoController.value.isInitialized
-        ? SizedBox.expand(
-            child: FittedBox(
-              fit: BoxFit.cover,
-              child: SizedBox(
-                width: _videoController.value.size.width,
-                height: _videoController.value.size.height,
-                child: VideoPlayer(_videoController),
+        ? Stack(
+            children: [
+              SizedBox.expand(
+                child: FittedBox(
+                  fit: BoxFit.cover,
+                  child: SizedBox(
+                    width: _videoController.value.size.width,
+                    height: _videoController.value.size.height,
+                    child: VideoPlayer(_videoController),
+                  ),
+                ),
               ),
-            ),
+              Positioned(
+                top: 50,
+                right: 20,
+                child: TextButton(
+                  onPressed: () async {
+                    _videoController.pause();
+                    _animationReady = true;
+                    if (_authPayload == null) {
+                      _authPayload = await ref.read(hiveServiceProvider).loadTokenAndUser();
+                    }
+                    if (mounted) {
+                      _tryNavigate();
+                    }
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.black.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Skip',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           )
         : const SizedBox.expand();
 
