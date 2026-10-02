@@ -82,6 +82,11 @@ class Product {
   final String description;
   RunningFlashSale? runningFlashSale;
   final bool? isDigital;
+  final List<BoxItem>? boxItems;
+  final List<ProductFeature>? features;
+  final List<Specification>? specifications;
+  final List<ProductFaq>? faqs;
+
   Product(
       {required this.id,
       required this.name,
@@ -101,7 +106,11 @@ class Product {
       required this.shop,
       required this.description,
       this.runningFlashSale,
-      this.isDigital});
+      this.isDigital,
+      this.boxItems,
+      this.features,
+      this.specifications,
+      this.faqs});
 
   Product copyWith(
       {int? id,
@@ -122,7 +131,11 @@ class Product {
       ShopInfo? shop,
       String? description,
       RunningFlashSale? runningFlashSale,
-      bool? isDigital}) {
+      bool? isDigital,
+      List<BoxItem>? boxItems,
+      List<ProductFeature>? features,
+      List<Specification>? specifications,
+      List<ProductFaq>? faqs}) {
     return Product(
         id: id ?? this.id,
         name: name ?? this.name,
@@ -142,7 +155,11 @@ class Product {
         shop: shop ?? this.shop,
         description: description ?? this.description,
         runningFlashSale: runningFlashSale ?? this.runningFlashSale,
-        isDigital: isDigital ?? this.isDigital);
+        isDigital: isDigital ?? this.isDigital,
+        boxItems: boxItems ?? this.boxItems,
+        features: features ?? this.features,
+        specifications: specifications ?? this.specifications,
+        faqs: faqs ?? this.faqs);
   }
 
   Map<String, dynamic> toMap() {
@@ -203,6 +220,18 @@ class Product {
           ? null
           : RunningFlashSale.fromMap(map["flash_sale"]),
       isDigital: map['is_digital'] as bool?,
+      boxItems: map['box_items'] != null
+          ? List<BoxItem>.from((map['box_items'] as List<dynamic>).map<BoxItem>((x) => BoxItem.fromMap(x as Map<String, dynamic>)))
+          : null,
+      features: map['features'] != null
+          ? List<ProductFeature>.from((map['features'] as List<dynamic>).map<ProductFeature>((x) => ProductFeature.fromMap(x as Map<String, dynamic>)))
+          : null,
+      specifications: map['specifications'] != null
+          ? List<Specification>.from((map['specifications'] as List<dynamic>).map<Specification>((x) => Specification.fromMap(x as Map<String, dynamic>)))
+          : null,
+      faqs: map['faqs'] != null
+          ? List<ProductFaq>.from((map['faqs'] as List<dynamic>).map<ProductFaq>((x) => ProductFaq.fromMap(x as Map<String, dynamic>)))
+          : null,
     );
   }
 
@@ -628,4 +657,39 @@ class RelatedProduct {
         isFavorite.hashCode ^
         shop.hashCode;
   }
+}
+
+class BoxItem {
+  final int id;
+  final String itemName;
+  final int sortOrder;
+  BoxItem({required this.id, required this.itemName, required this.sortOrder});
+  factory BoxItem.fromMap(Map<String, dynamic> map) => BoxItem(id: map['id']?.toInt() ?? 0, itemName: map['item_name'] ?? '', sortOrder: map['sort_order']?.toInt() ?? 0);
+}
+
+class ProductFeature {
+  final int id;
+  final String title;
+  final String? icon;
+  final int sortOrder;
+  ProductFeature({required this.id, required this.title, this.icon, required this.sortOrder});
+  factory ProductFeature.fromMap(Map<String, dynamic> map) => ProductFeature(id: map['id']?.toInt() ?? 0, title: map['title'] ?? '', icon: map['icon'], sortOrder: map['sort_order']?.toInt() ?? 0);
+}
+
+class Specification {
+  final int id;
+  final String label;
+  final String value;
+  final int sortOrder;
+  Specification({required this.id, required this.label, required this.value, required this.sortOrder});
+  factory Specification.fromMap(Map<String, dynamic> map) => Specification(id: map['id']?.toInt() ?? 0, label: map['label'] ?? '', value: map['value'] ?? '', sortOrder: map['sort_order']?.toInt() ?? 0);
+}
+
+class ProductFaq {
+  final int id;
+  final String question;
+  final String answer;
+  final int sortOrder;
+  ProductFaq({required this.id, required this.question, required this.answer, required this.sortOrder});
+  factory ProductFaq.fromMap(Map<String, dynamic> map) => ProductFaq(id: map['id']?.toInt() ?? 0, question: map['question'] ?? '', answer: map['answer'] ?? '', sortOrder: map['sort_order']?.toInt() ?? 0);
 }

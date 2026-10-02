@@ -29,7 +29,7 @@ class ProductDetailsTabsSection extends ConsumerStatefulWidget {
 class _ProductDetailsTabsSectionState
     extends ConsumerState<ProductDetailsTabsSection> {
   static const _tabs = ['Overview', 'Details', 'Reviews', 'Q&A'];
-  bool _descriptionExpanded = true;
+  bool _descriptionExpanded = false;
   bool _boxExpanded = false;
   bool _specsExpanded = false;
   int _reviewPage = 1;
@@ -55,28 +55,11 @@ class _ProductDetailsTabsSectionState
   }
 
   List<String> _featureLabels() {
-    // Only use product text from API — never show watch-specific static features.
-    final short = widget.productDetails.product.shortDescription.trim();
-    final fromShort = short
-        .split(RegExp(r'[.•|,\n]'))
-        .map((e) => e.trim())
-        .where((e) => e.length > 3 && e.length < 40)
-        .take(6)
-        .toList();
-    if (fromShort.isNotEmpty) return fromShort;
-
-    // Strip simple HTML tags from description and try again.
-    final description = widget.productDetails.product.description
-        .replaceAll(RegExp(r'<[^>]*>'), ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
-    final fromDescription = description
-        .split(RegExp(r'[.•|,\n]'))
-        .map((e) => e.trim())
-        .where((e) => e.length > 3 && e.length < 40)
-        .take(6)
-        .toList();
-    return fromDescription;
+    final product = widget.productDetails.product;
+    if (product.features != null && product.features!.isNotEmpty) {
+      return product.features!.map((f) => f.title).toList();
+    }
+    return [];
   }
 
   static const _featureIcons = [
@@ -169,6 +152,7 @@ class _ProductDetailsTabsSectionState
           ),
           Gap(12.h),
           GridView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: labels.length.clamp(1, 6),
@@ -302,13 +286,7 @@ class _ProductDetailsTabsSectionState
           title: "What's in the Box",
           expanded: _boxExpanded,
           onTap: () => setState(() => _boxExpanded = !_boxExpanded),
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 12.h),
-            child: Text(
-              'Details not available',
-              style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
-            ),
-          ),
+          child: _buildBoxItemsBody(),
         ),
         _buildChevronRow(
           title: 'Specifications',
@@ -327,26 +305,20 @@ class _ProductDetailsTabsSectionState
       children: [
         _buildExpandableTile(
           title: 'Product Description',
-          expanded: true,
-          onTap: () {},
+          expanded: _descriptionExpanded,
+          onTap: () => setState(() => _descriptionExpanded = !_descriptionExpanded),
           child: _buildDescriptionBody(),
         ),
         _buildChevronRow(
           title: "What's in the Box",
-          expanded: true,
-          onTap: () {},
-          child: Padding(
-            padding: EdgeInsets.only(bottom: 12.h),
-            child: Text(
-              'Details not available',
-              style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
-            ),
-          ),
+          expanded: _boxExpanded,
+          onTap: () => setState(() => _boxExpanded = !_boxExpanded),
+          child: _buildBoxItemsBody(),
         ),
         _buildChevronRow(
           title: 'Specifications',
-          expanded: true,
-          onTap: () {},
+          expanded: _specsExpanded,
+          onTap: () => setState(() => _specsExpanded = !_specsExpanded),
           child: _buildSpecsBody(),
         ),
       ],
@@ -378,34 +350,82 @@ class _ProductDetailsTabsSectionState
     );
   }
 
-  Widget _buildSpecsBody() {
+  Widget _buildBoxItemsBody() {
     final product = widget.productDetails.product;
-    final lines = <String>[];
-    if (product.brand != null && product.brand!.trim().isNotEmpty) {
-      lines.add('Brand: ${product.brand}');
-    }
-    if (product.colors.isNotEmpty) {
-      lines.add('Colors: ${product.colors.map((c) => c.name).join(', ')}');
-    }
-    if (product.productSizeList.isNotEmpty) {
-      lines.add(
-          'Sizes: ${product.productSizeList.map((s) => s.name).join(', ')}');
-    }
-    if (lines.isEmpty) {
-      lines.add('Details not available');
+    if (product.boxItems == null || product.boxItems!.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 12.h),
+        child: Text(
+          'Details not available',
+          style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+        ),
+      );
     }
     return Padding(
       padding: EdgeInsets.only(bottom: 12.h),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: lines
+        children: product.boxItems!
             .map(
-              (line) => Padding(
+              (item) => Padding(
                 padding: EdgeInsets.only(bottom: 6.h),
-                child: Text(
-                  line,
-                  style:
-                      TextStyle(fontSize: 13.sp, color: Colors.grey.shade700),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.check_circle_outline, size: 16.sp, color: Colors.grey.shade700),
+                    Gap(8.w),
+                    Expanded(
+                      child: Text(
+                        item.itemName,
+                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade700),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
+      ),
+    );
+  }
+
+  Widget _buildSpecsBody() {
+    final product = widget.productDetails.product;
+    if (product.specifications == null || product.specifications!.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 12.h),
+        child: Text(
+          'Details not available',
+          style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+        ),
+      );
+    }
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: product.specifications!
+            .map(
+              (spec) => Padding(
+                padding: EdgeInsets.only(bottom: 6.h),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: Text(
+                        spec.label,
+                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600),
+                      ),
+                    ),
+                    Expanded(
+                      flex: 3,
+                      child: Text(
+                        spec.value,
+                        style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade800, fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             )
@@ -416,55 +436,105 @@ class _ProductDetailsTabsSectionState
 
   Widget _buildReviewsSummaryRow() {
     final product = widget.productDetails.product;
-    return InkWell(
-      onTap: () =>
-          ref.read(productDetailsTabIndexProvider.notifier).state = 2,
-      child: Container(
-        padding: EdgeInsets.symmetric(vertical: 14.h, horizontal: 12.w),
-        decoration: BoxDecoration(
-          color: const Color(0xFFF7F7F7),
-          borderRadius: BorderRadius.circular(12.r),
-        ),
+    final reviews = ref.watch(shopControllerProvider.notifier).review;
+    
+    int count5 = 0, count4 = 0, count3 = 0, count2 = 0, count1 = 0;
+    for (var r in reviews) {
+      if (r.rating >= 4.5) count5++;
+      else if (r.rating >= 3.5) count4++;
+      else if (r.rating >= 2.5) count3++;
+      else if (r.rating >= 1.5) count2++;
+      else count1++;
+    }
+    final total = reviews.isNotEmpty ? reviews.length : 1;
+
+    Widget _buildProgressBar(int stars, int count) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 4.h),
         child: Row(
           children: [
-            Text(
-              product.rating.toStringAsFixed(1),
-              style: TextStyle(
-                fontSize: 28.sp,
-                fontWeight: FontWeight.w800,
-                color: Colors.black,
+            Text('$stars', style: TextStyle(fontSize: 13.sp, fontWeight: FontWeight.w700, color: Colors.black87)),
+            Gap(4.w),
+            Icon(Icons.star, color: _kAccent, size: 14.sp),
+            Gap(8.w),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4.r),
+                child: LinearProgressIndicator(
+                  value: count / total,
+                  minHeight: 6.h,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(_kAccent),
+                ),
               ),
             ),
             Gap(12.w),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: List.generate(5, (index) {
-                      return Icon(
-                        index < product.rating.floor()
-                            ? Icons.star_rounded
-                            : Icons.star_border_rounded,
-                        color: _kAccent,
-                        size: 18.sp,
-                      );
-                    }),
-                  ),
-                  Gap(4.h),
-                  Text(
-                    '${product.totalReviews} reviews',
-                    style: TextStyle(
-                      fontSize: 12.sp,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
+            SizedBox(
+              width: 14.w,
+              child: Text('$count', style: TextStyle(fontSize: 13.sp, color: Colors.grey.shade600), textAlign: TextAlign.right),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey.shade500),
           ],
         ),
+      );
+    }
+
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 20.h, horizontal: 16.w),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9F9F9),
+        borderRadius: BorderRadius.circular(16.r),
+        border: Border.all(color: Colors.grey.shade100),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Text(
+                product.rating.toStringAsFixed(1),
+                style: TextStyle(
+                  fontSize: 42.sp,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black,
+                  height: 1,
+                ),
+              ),
+              Gap(12.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: List.generate(5, (index) {
+                        return Icon(
+                          index < product.rating.floor()
+                              ? Icons.star_rounded
+                              : Icons.star_border_rounded,
+                          color: _kAccent,
+                          size: 20.sp,
+                        );
+                      }),
+                    ),
+                    Gap(4.h),
+                    Text(
+                      '${product.totalReviews} reviews',
+                      style: TextStyle(
+                        fontSize: 13.sp,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: Colors.grey.shade400),
+            ],
+          ),
+          Gap(16.h),
+          _buildProgressBar(5, count5),
+          _buildProgressBar(4, count4),
+          _buildProgressBar(3, count3),
+          _buildProgressBar(2, count2),
+          _buildProgressBar(1, count1),
+        ],
       ),
     );
   }
@@ -498,6 +568,7 @@ class _ProductDetailsTabsSectionState
           )
         else
           ListView.builder(
+            padding: EdgeInsets.zero,
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             itemCount: reviews.length,
@@ -508,13 +579,55 @@ class _ProductDetailsTabsSectionState
   }
 
   Widget _buildQaTab() {
-    return Padding(
-      padding: EdgeInsets.symmetric(vertical: 48.h),
-      child: Center(
-        child: Text(
-          'No questions yet',
-          style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+    final product = widget.productDetails.product;
+    if (product.faqs == null || product.faqs!.isEmpty) {
+      return Padding(
+        padding: EdgeInsets.symmetric(vertical: 48.h),
+        child: Center(
+          child: Text(
+            'No questions yet',
+            style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade600),
+          ),
         ),
+      );
+    }
+
+    return Padding(
+      padding: EdgeInsets.only(top: 8.h),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: product.faqs!
+            .map(
+              (faq) => Container(
+                margin: EdgeInsets.only(bottom: 16.h),
+                padding: EdgeInsets.all(16.r),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF7F7F7),
+                  borderRadius: BorderRadius.circular(12.r),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Q: ', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black)),
+                        Expanded(child: Text(faq.question, style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.bold, color: Colors.black))),
+                      ],
+                    ),
+                    Gap(8.h),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('A: ', style: TextStyle(fontSize: 14.sp, fontWeight: FontWeight.w600, color: Colors.grey.shade600)),
+                        Expanded(child: Text(faq.answer, style: TextStyle(fontSize: 14.sp, color: Colors.grey.shade700))),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            )
+            .toList(),
       ),
     );
   }
