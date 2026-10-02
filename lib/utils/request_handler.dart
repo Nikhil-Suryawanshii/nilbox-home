@@ -147,7 +147,8 @@ class ApiInterceptors {
         handler.next(response);
       },
       onError: (error, handler) {
-        if (error.response?.statusCode == 401) {
+        bool isLoginRequest = error.requestOptions.path.contains('login');
+        if (error.response?.statusCode == 401 && !isLoginRequest) {
           _handleUnauthorized();
         } else {
           handleError(error);
@@ -161,7 +162,10 @@ class ApiInterceptors {
     final message = response.data['message'] ?? "";
     switch (response.statusCode) {
       case 401:
-        _handleUnauthorized();
+        bool isLoginRequest = response.requestOptions.path.contains('login');
+        if (!isLoginRequest) {
+          _handleUnauthorized();
+        }
         break;
       case 400:
       case 403:

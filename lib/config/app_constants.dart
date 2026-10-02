@@ -1,6 +1,8 @@
 class AppConstants {
 // Codecanyon
   static const String baseUrl = 'https://net.nilbox.net/api';
+
+  // static const String baseUrl = "http://127.0.0.1:8000/api";
   // static const String baseUrl = 'https://devnilbox.com/api';
   // QA Testing
   //static const String baseUrl = 'https://uat.readyecommerce.app/api';
@@ -24,7 +26,8 @@ class AppConstants {
   static const String getFollowingShops = '$baseUrl/following-shops';
 
   static const String getShopDetails = '$baseUrl/shop';
-  static const String updateShopFollowUnfollow = '$getShopDetails/follow-toggle';
+  static const String updateShopFollowUnfollow =
+      '$getShopDetails/follow-toggle';
   static const String getProducts = '$baseUrl/products';
   static const String getShopCategiries = '$baseUrl/shop-categories';
   static const String getReviews = '$baseUrl/reviews';
@@ -81,7 +84,6 @@ class AppConstants {
   static const String blockSeller = '$baseUrl/block-seller';
   static const String unblockSeller = '$baseUrl/unblock-seller';
 
-
   static const String getShopsList = '$baseUrl/get-shops';
   static const String unreadMessage = '$baseUrl/unread-messages';
   static const String returnOrderSubmit = '$baseUrl/return-order';
@@ -98,12 +100,14 @@ class AppConstants {
   static String sellerProfileDetails = '$baseUrl/seller/details';
   static String sellerUpdateUserInfo = '$baseUrl/seller/user-update';
   static String sellerUpdateShopInfo = '$baseUrl/seller/shop-update';
-  static String sellerUpdateShopSettings = '$baseUrl/seller/shop-setting-update';
+  static String sellerUpdateShopSettings =
+      '$baseUrl/seller/shop-setting-update';
 
   // --- Seller Dashboard & Management Endpoints (NEW) ---
   static String sellerDashboard = '$baseUrl/seller/dashboard';
   static String sellerOrders = '$baseUrl/seller/orders';
-  static String sellerUpdateOrderStatus = '$baseUrl/seller/orders/status-update';
+  static String sellerUpdateOrderStatus =
+      '$baseUrl/seller/orders/status-update';
   static String sellerGetOrderDetails = '$baseUrl/seller/orders/details';
   static String sellerWalletDetails = '$baseUrl/seller/wallet';
   static String sellerWalletHistory = '$baseUrl/seller/wallet/history';
@@ -117,10 +121,14 @@ class AppConstants {
   static String sellerReturnOrders = '$baseUrl/seller/return-orders';
   // static String sellerGetProductDetails = '$baseUrl/seller/product';
   // static String sellerUpdateProduct = '$baseUrl/seller/product';
-  static String sellerToggleActiveStatus = '$baseUrl/seller/product/status/toogle';
-  static String sellerUpdateProduct(int id) => '$baseUrl/seller/product/$id/update';
-  static String sellerGetProductDetails(int id) => '$baseUrl/seller/product/$id/show';
-  static String sellerUpdateReturnOrderStatus(int id) => '$baseUrl/seller/return-order/$id/status-change';
+  static String sellerToggleActiveStatus =
+      '$baseUrl/seller/product/status/toogle';
+  static String sellerUpdateProduct(int id) =>
+      '$baseUrl/seller/product/$id/update';
+  static String sellerGetProductDetails(int id) =>
+      '$baseUrl/seller/product/$id/show';
+  static String sellerUpdateReturnOrderStatus(int id) =>
+      '$baseUrl/seller/return-order/$id/status-change';
 
   // --- Seller Messaging (NEW) ---
   static const String sellerStoreMessage = '$baseUrl/seller/store-message';
@@ -143,8 +151,10 @@ class AppConstants {
   static const String cartModelBox = 'hive_cart_model_box';
   // static const String sellerAuthBox = 'readySeller_authBox'; // Seller Auth (NEW)
   // static const String sellerUserBox = 'readySeller_userBox'; // Seller Data (NEW)
-  static const String sellerAuthBox = 'laundrySeller_authBox'; // Seller Auth (NEW)
-  static const String sellerUserBox = 'laundrySeller_userBox'; // Seller Data (NEW)
+  static const String sellerAuthBox =
+      'laundrySeller_authBox'; // Seller Auth (NEW)
+  static const String sellerUserBox =
+      'laundrySeller_userBox'; // Seller Data (NEW)
 
   // Settings Veriable Names
   static const String firstOpen = 'firstOpen';
@@ -173,7 +183,7 @@ class AppConstants {
   /// Temporary: set to false to restore API-driven home banners.
   static const bool useStaticHomeBanner = true;
 
-  static String pusherApiKey = 'a3cbadc04a202a7746fc'; 
+  static String pusherApiKey = 'a3cbadc04a202a7746fc';
   static String sellerPusherApiKey = '0f2222c2748df3ad45ba'; // NEW
   static String pusherCluster = 'mt1';
   static String sellerPusherCluster = 'ap2'; // NEW

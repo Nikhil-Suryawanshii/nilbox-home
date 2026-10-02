@@ -346,14 +346,25 @@ class AuthController extends StateNotifier<bool> {
       final response = await ref
           .read(authServiceProvider)
           .login(phone: phone, password: password);
-      final String message = response.data['message'];
-      final userInfo = User.fromMap(response.data['data']['user']);
-      final accessToken = response.data['data']['access']['token'];
-      ref.read(hiveServiceProvider).saveUserInfo(userInfo: userInfo);
-      ref.read(hiveServiceProvider).saveUserAuthToken(authToken: accessToken);
-      ref.read(apiClientProvider).updateToken(token: accessToken);
-      state = false;
-      return CommonResponse(isSuccess: true, message: message);
+          
+      if (response.statusCode == 200) {
+        final String message = response.data['message'];
+        final userInfo = User.fromMap(response.data['data']['user']);
+        final accessToken = response.data['data']['access']['token'];
+        ref.read(hiveServiceProvider).saveUserInfo(userInfo: userInfo);
+        ref.read(hiveServiceProvider).saveUserAuthToken(authToken: accessToken);
+        ref.read(apiClientProvider).updateToken(token: accessToken);
+        state = false;
+        return CommonResponse(isSuccess: true, message: message);
+      } else {
+        state = false;
+        // 422 Unprocessable Entity, etc.
+        // The interceptor already showed a snackbar, but we should return false gracefully.
+        return CommonResponse(
+          isSuccess: false, 
+          message: response.data['message'] ?? 'Login failed. Please check your credentials.',
+        );
+      }
     } catch (error) {
       state = false;
       debugPrint(error.toString());

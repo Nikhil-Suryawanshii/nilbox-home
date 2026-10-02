@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -46,7 +47,16 @@ class AuthService implements AuthProviderBase {
   @override
   Future<Response> login(
       {required String phone, required String password}) async {
-    String? fcmToken = await FirebaseMessaging.instance.getToken();
+    String? fcmToken;
+    try {
+      fcmToken = await FirebaseMessaging.instance.getToken();
+    } catch (e) {
+      debugPrint("FCM GetToken Error: $e");
+    }
+    
+    // Determine if input is email or phone
+    bool isEmail = phone.contains('@');
+    
     final response = await ref.read(apiClientProvider).post(
       AppConstants.loginUrl,
       data: {
